@@ -5505,8 +5505,18 @@ public sealed partial class uScript : EditorWindow
       var path = Application.dataPath;
       var searchPattern = string.Format("{0}.*", nodeType);
 
+      var searchPaths = new List<string> { path };
+
+      // uScript may be installed as a package outside of the Assets folder
+      var root = uScriptConfig.ConstantPaths.Root;
+      if (!string.IsNullOrEmpty(root) && Directory.Exists(root)
+          && !root.Replace('\\', '/').StartsWith(path.Replace('\\', '/') + "/", IgnoreCase))
+      {
+         searchPaths.Add(root);
+      }
+
       var files =
-         Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
+         searchPaths.SelectMany(p => Directory.GetFiles(p, searchPattern, SearchOption.AllDirectories))
             .Where(
                s => s.EndsWith(".cs", IgnoreCase) || s.EndsWith(".js", IgnoreCase) || s.EndsWith(".boo", IgnoreCase))
             .ToList();

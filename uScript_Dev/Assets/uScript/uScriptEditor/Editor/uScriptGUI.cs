@@ -134,8 +134,8 @@ namespace Detox.Editor
       public static Texture2D GetTexture(string textureName)
       {
          var path = string.Format(
-            "Assets{0}/Editor/_GUI/EditorImages/{1}.png",
-            uScriptConfig.ConstantPaths.Editor.Replace("\\", "/").Replace(Application.dataPath, string.Empty),
+            "{0}/Editor/_GUI/EditorImages/{1}.png",
+            uScriptConfig.ConstantPaths.RelativePath(uScriptConfig.ConstantPaths.Editor),
             textureName);
          return AssetDatabase.LoadAssetAtPath(path, typeof(Texture2D)) as Texture2D;
       }

@@ -25,9 +25,25 @@ This code is provided as-is under the MIT license. Detox Studios has sunsetted u
 www.detoxstudios.com
 
 
-** Using uScript with Unity 6 (and 2020+) **
+** Installing uScript from GitHub (recommended) **
 
-Copy the `uScript_Dev/Assets/uScript` folder into your project's `Assets` folder.
+In Unity: Window > Package Manager > "+" > "Install package from git URL..." and enter:
+
+    https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript
+
+To update later, select uScript in the Package Manager and click "Update" (or remove and re-add it).
+Your graphs and generated code stay in Assets/uScriptProjectFiles and are not touched.
+
+If you previously copied uScript into Assets/uScript, delete that folder first (keep
+Assets/uScriptProjectFiles). Scenes keep their uScript components because the script GUIDs are unchanged.
+
+Alternatively, copy the `uScript_Dev/Assets/uScript` folder into your project's `Assets` folder.
+
+uScript compiles into its own assemblies (uScript.Runtime and uScript.Editor), so editing your own
+scripts no longer recompiles uScript.
+
+
+** Using uScript with Unity 6 (and 2020+) **
 
 * Legacy input: uScript's input nodes use the classic `UnityEngine.Input` API. New Unity 6
   projects default to the Input System package only, so set

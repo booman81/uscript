@@ -27,4 +27,33 @@ public static class uScriptCompat
       return obj.GetInstanceID();
 #endif
    }
+
+   /// <summary>
+   /// Finds a type by name in any loaded assembly. System.Type.GetType(name) only searches the calling
+   /// assembly, which misses user scripts now that uScript lives in its own assembly (uScript.Runtime).
+   /// </summary>
+   public static System.Type FindType(string typeName)
+   {
+      if (string.IsNullOrEmpty(typeName))
+      {
+         return null;
+      }
+
+      var type = System.Type.GetType(typeName);
+      if (type != null)
+      {
+         return type;
+      }
+
+      foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+      {
+         type = assembly.GetType(typeName);
+         if (type != null)
+         {
+            return type;
+         }
+      }
+
+      return null;
+   }
 }
