@@ -217,7 +217,16 @@ namespace Detox.Data
             reader.Close( );
          }
 
-         return Enum.Parse(Type.GetType(type), enumValue);
+         Type enumType = Type.GetType(type);
+         if (null == enumType)
+         {
+            // Graphs saved before uScript had its own assemblies store types qualified with
+            // "Assembly-CSharp" / "Assembly-CSharp-Editor", so fall back to a name-only lookup.
+            int comma = type.IndexOf(',');
+            enumType = uScriptCompat.FindType(comma > 0 ? type.Substring(0, comma).Trim() : type);
+         }
+
+         return Enum.Parse(enumType, enumValue);
       }
 
       public void Save(ObjectSerializer serializer, object data)

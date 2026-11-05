@@ -35,7 +35,11 @@ public class uScriptAct_SetRigidbodyVelocity2D : uScriptLogic
 #else
          if (currentTarget != null && currentTarget.GetComponent<Rigidbody2D>() != null)
          {
+#if UNITY_6000_0_OR_NEWER
+            currentTarget.GetComponent<Rigidbody2D>().linearVelocity = Velocity;
+#else
             currentTarget.GetComponent<Rigidbody2D>().velocity = Velocity;
+#endif
          }
 #endif
       }

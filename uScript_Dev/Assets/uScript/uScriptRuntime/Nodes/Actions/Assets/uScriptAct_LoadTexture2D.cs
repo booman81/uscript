@@ -41,7 +41,7 @@ public class uScriptAct_LoadTexture2D : uScriptLogic
       {
          Texture2D ac = (Texture2D)o;
 
-         string path = UnityEditor.AssetDatabase.GetAssetPath( ac.GetInstanceID( ) );
+         string path = UnityEditor.AssetDatabase.GetAssetPath( ac );
 
          int index = path.IndexOf( "Resources/" );
          

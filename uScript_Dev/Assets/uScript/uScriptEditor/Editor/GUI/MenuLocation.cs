@@ -139,7 +139,7 @@ namespace Detox.Editor
 
       private static string ReflectOldBuildNumber()
       {
-         var type = System.Type.GetType("Detox.Editor.uScriptMenuLocation");
+         var type = uScriptCompat.FindType("Detox.Editor.uScriptMenuLocation");
          if (type != null)
          {
             var field = type.GetField("Build", BindingFlags.NonPublic | BindingFlags.Static);
@@ -153,7 +153,7 @@ namespace Detox.Editor
 
       private static string ReflectOldMenuRoot()
       {
-         var type = System.Type.GetType("Detox.Editor.uScriptMenuLocation");
+         var type = uScriptCompat.FindType("Detox.Editor.uScriptMenuLocation");
          if (type != null)
          {
             var field = type.GetField("MenuRoot", BindingFlags.NonPublic | BindingFlags.Static);

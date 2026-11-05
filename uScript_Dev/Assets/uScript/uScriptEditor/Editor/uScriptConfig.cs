@@ -197,6 +197,40 @@ public static class uScriptConfig
          }
          // else - assume uScript root is [path-to-unity-project]/Assets/uscript
 
+         // uScript can also live in any Assets sub-folder or be installed as a package (e.g. from a git URL),
+         // in which case its files are in Library/PackageCache and are addressed as "Packages/<name>/...".
+         RootAssetPath = "Assets/uScript";
+#if UNITY_2019_3_OR_NEWER
+         try
+         {
+            var asmdefPath = UnityEditor.Compilation.CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName("uScript.Editor");
+            if (!string.IsNullOrEmpty(asmdefPath))
+            {
+               // [root]/uScriptEditor/uScript.Editor.asmdef -> [root]
+               asmdefPath = asmdefPath.Replace('\\', '/');
+               var rootAssetPath = asmdefPath.Substring(0, asmdefPath.LastIndexOf('/'));
+               rootAssetPath = rootAssetPath.Substring(0, rootAssetPath.LastIndexOf('/'));
+
+               var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssetPath(asmdefPath);
+               if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
+               {
+                  uscript = (packageInfo.resolvedPath + rootAssetPath.Substring(packageInfo.assetPath.Length)).Replace('\\', '/');
+               }
+               else
+               {
+                  uscript = System.IO.Path.GetFullPath(rootAssetPath).Replace('\\', '/');
+               }
+
+               RootAssetPath = rootAssetPath;
+            }
+         }
+         catch (System.Exception)
+         {
+            // Fall back to the default location
+         }
+#endif
+
+         Root = uscript.Replace('\\', '/');
          Editor = string.Format("{0}/uScriptEditor", uscript);
          RuntimeNodes = string.Format("{0}/uScriptRuntime/Nodes", uscript);
 
@@ -208,6 +242,12 @@ public static class uScriptConfig
          Screenshots = string.Format("{0}/Screenshots", assets);
          Settings = string.Format("{0}/uScriptProjectFiles", assets);
       }
+
+      /// <summary>Absolute path of the uScript install folder.</summary>
+      public static string Root { get; private set; }
+
+      /// <summary>AssetDatabase path of the uScript install folder ("Assets/uScript" or "Packages/...").</summary>
+      public static string RootAssetPath { get; private set; }
 
       public static string Editor { get; private set; }
 
@@ -228,6 +268,15 @@ public static class uScriptConfig
       public static string RelativePath(string absolutePath)
       {
          absolutePath = absolutePath.Replace('\\', '/');
+
+         // Files inside the uScript install folder (which may be a package outside of Assets)
+         if (!string.IsNullOrEmpty(Root) && !string.IsNullOrEmpty(RootAssetPath)
+             && absolutePath.StartsWith(Root, StringComparison.OrdinalIgnoreCase)
+             && (absolutePath.Length == Root.Length || absolutePath[Root.Length] == '/'))
+         {
+            return RootAssetPath + absolutePath.Substring(Root.Length);
+         }
+
          return absolutePath.StartsWith(Application.dataPath)
                    ? absolutePath.Substring(Application.dataPath.Length - "Assets".Length)
                    : absolutePath;
@@ -587,8 +636,8 @@ public class uScriptDefaultStyle : uScriptStyle
       };
 
       var assetPath = uScriptConfig.ConstantPaths.Skin + "/elements";
-      assetPath = uScriptConfig.ConstantPaths.RelativePath(assetPath);
 
+      // Use the absolute path for file IO (packages installed from git are not under the project folder)
       var directory = new System.IO.DirectoryInfo(assetPath);
       var files = directory.GetFiles("*.png");
 

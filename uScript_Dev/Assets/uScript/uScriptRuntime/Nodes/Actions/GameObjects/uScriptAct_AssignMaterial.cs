@@ -59,7 +59,7 @@ public class uScriptAct_AssignMaterial : uScriptLogic
          Material ac = (Material)o;
 
          Hashtable hashtable = new Hashtable();
-         hashtable["Material"] = UnityEditor.AssetDatabase.GetAssetPath(ac.GetInstanceID());
+         hashtable["Material"] = UnityEditor.AssetDatabase.GetAssetPath(ac);
 
          return hashtable;
       }

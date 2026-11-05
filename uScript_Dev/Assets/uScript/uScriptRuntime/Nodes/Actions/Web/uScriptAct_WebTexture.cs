@@ -8,7 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using UnityEngine;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
 using UnityEngine.Networking;
 #endif
 
@@ -23,7 +23,7 @@ using UnityEngine.Networking;
 public class uScriptAct_WebTexture : uScriptLogic
 {
    private bool finished;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
    private UnityWebRequest www;
 #else
    private WWW www;
@@ -47,7 +47,7 @@ public class uScriptAct_WebTexture : uScriptLogic
    public void In(
       [FriendlyName("URL", "The URL to download")]
       string URL,
-#if !UNITY_2019
+#if !UNITY_2019_1_OR_NEWER
       [FriendlyName("Form Data", "A WWWForm instance containing the form data to post."), SocketState(false, false)]
       WWWForm Form,
 #endif
@@ -61,8 +61,9 @@ public class uScriptAct_WebTexture : uScriptLogic
       this.OutError = false;
 
       this.finished = false;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
       this.www = UnityWebRequestTexture.GetTexture(URL);
+      this.www.SendWebRequest();
 #else
       this.www = Form == null ? new WWW(URL) : new WWW(URL, Form);
 #endif
@@ -98,7 +99,7 @@ public class uScriptAct_WebTexture : uScriptLogic
          }
          else
          {
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
             result = DownloadHandlerTexture.GetContent(this.www);
 #else
             result = this.www.texture;

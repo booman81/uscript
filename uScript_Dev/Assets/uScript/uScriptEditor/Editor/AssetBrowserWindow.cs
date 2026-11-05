@@ -101,11 +101,19 @@ public class AssetBrowserWindow : EditorWindow
             break;
          case AssetType.MovieTexture:
             assetExtensions = new List<string> { "ogg", "mov", "mpg", "mpeg", "mp4", "avi", "asf" };
+#if UNITY_2017_1_OR_NEWER
+            type = typeof(UnityEngine.Video.VideoClip);
+#else
             type = typeof(MovieTexture);
+#endif
             break;
          case AssetType.PhysicMaterial:
             assetExtensions = new List<string> { "physicmaterial" };
+#if UNITY_6000_0_OR_NEWER
+            type = typeof(PhysicsMaterial);
+#else
             type = typeof(PhysicMaterial);
+#endif
             break;
          case AssetType.Prefab:
             assetExtensions = new List<string> { "prefab" };

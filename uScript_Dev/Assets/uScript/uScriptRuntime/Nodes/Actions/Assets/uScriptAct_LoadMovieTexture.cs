@@ -65,7 +65,7 @@ public class uScriptAct_LoadMovieTexture : uScriptLogic
          MovieTexture ac = (MovieTexture)o;
 #endif
 
-         string path = UnityEditor.AssetDatabase.GetAssetPath( ac.GetInstanceID( ) );
+         string path = UnityEditor.AssetDatabase.GetAssetPath( ac );
 
          int index = path.IndexOf( "Resources/" );
          

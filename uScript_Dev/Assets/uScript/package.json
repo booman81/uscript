@@ -1,0 +1,32 @@
+{
+  "name": "com.detoxstudios.uscript",
+  "displayName": "uScript",
+  "version": "1.1.0",
+  "unity": "2021.3",
+  "description": "uScript visual scripting by Detox Studios (open-sourced under the MIT license), updated for Unity 6.",
+  "keywords": [
+    "uScript",
+    "visual scripting",
+    "nodes"
+  ],
+  "author": {
+    "name": "Detox Studios"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "com.unity.ugui": "1.0.0",
+    "com.unity.modules.ai": "1.0.0",
+    "com.unity.modules.animation": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.particlesystem": "1.0.0",
+    "com.unity.modules.physics": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0",
+    "com.unity.modules.terrain": "1.0.0",
+    "com.unity.modules.ui": "1.0.0",
+    "com.unity.modules.unitywebrequest": "1.0.0",
+    "com.unity.modules.unitywebrequesttexture": "1.0.0",
+    "com.unity.modules.unitywebrequestwww": "1.0.0",
+    "com.unity.modules.video": "1.0.0"
+  }
+}

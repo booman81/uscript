@@ -249,7 +249,16 @@ internal static class StringExtensions
    /// <returns>The relative path beginning with "Assets"</returns>
    public static string RelativeAssetPath(this string path)
    {
-      return path.Replace('\\', '/').Replace(Application.dataPath, "Assets");
+      path = path.Replace('\\', '/');
+
+      // Files inside the uScript install folder, which may be a package outside of the Assets folder
+      var root = uScriptConfig.ConstantPaths.Root;
+      if (!string.IsNullOrEmpty(root) && path.StartsWith(root, StringComparison.OrdinalIgnoreCase))
+      {
+         return uScriptConfig.ConstantPaths.RelativePath(path);
+      }
+
+      return path.Replace(Application.dataPath, "Assets");
    }
 
    /// <summary>

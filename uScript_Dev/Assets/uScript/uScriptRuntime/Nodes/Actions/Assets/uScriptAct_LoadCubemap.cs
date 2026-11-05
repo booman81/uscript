@@ -41,7 +41,7 @@ public class uScriptAct_LoadCubemap : uScriptLogic
       {
          Cubemap ac = (Cubemap)o;
 
-         string path = UnityEditor.AssetDatabase.GetAssetPath( ac.GetInstanceID( ) );
+         string path = UnityEditor.AssetDatabase.GetAssetPath( ac );
 
          int index = path.IndexOf( "Resources/" );
          

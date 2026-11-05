@@ -1187,7 +1187,12 @@ public sealed partial class uScript : EditorWindow
 
    internal void Awake()
    {
+#if UNITY_2017_2_OR_NEWER
+      EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+      EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#else
       EditorApplication.playmodeStateChanged = OnPlaymodeStateChanged;
+#endif
       this.forceCodeValidation = true;
    }
 
@@ -1331,10 +1336,16 @@ public sealed partial class uScript : EditorWindow
          m_SelectAllNodes = false;
       }
 
+#if UNITY_2017_2_OR_NEWER
+      // Re-register after domain reloads (removing first prevents duplicate subscriptions)
+      EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+      EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#else
       if (EditorApplication.playmodeStateChanged == null)
       {
          EditorApplication.playmodeStateChanged = OnPlaymodeStateChanged;
       }
+#endif
 
       if (this.undoObject != null )
       {
@@ -2323,6 +2334,16 @@ public sealed partial class uScript : EditorWindow
       this.pendingNodeUsesMousePosition = useMousePosition;
    }
 
+#if UNITY_2017_2_OR_NEWER
+   private void OnPlayModeStateChanged(PlayModeStateChange state)
+   {
+      if (state == PlayModeStateChange.ExitingEditMode)
+      {
+         OnPlaymodeStateChanged();
+      }
+   }
+
+#endif
    private void OnPlaymodeStateChanged()
    {
       //if we're not debugging values then we're just starting into playing in the editor
@@ -2408,8 +2429,11 @@ public sealed partial class uScript : EditorWindow
    {
       var nodeType = ScriptEditor.FindNodeType(entityNode);
       var relativePath = GetRelativePathToNodeSource(nodeType);
-      var assetInstanceID = GetAssetInstanceID(relativePath, typeof(TextAsset));
-      AssetDatabase.OpenAsset(assetInstanceID);
+      var asset = AssetDatabase.LoadAssetAtPath(relativePath, typeof(TextAsset));
+      if (asset != null)
+      {
+         AssetDatabase.OpenAsset(asset);
+      }
    }
 
    private void LoadGraphPingSource(EntityNode entityNode)
@@ -5449,7 +5473,7 @@ public sealed partial class uScript : EditorWindow
    public static int GetAssetInstanceID(string assetPathRelativeToProject, Type type)
    {
       var obj = AssetDatabase.LoadAssetAtPath(assetPathRelativeToProject, type);
-      return obj == null ? -1 : obj.GetInstanceID();
+      return obj == null ? -1 : uScriptCompat.GetObjectID(obj);
    }
    
    public static Type GetAssemblyQualifiedType(String typeName)
@@ -5481,8 +5505,18 @@ public sealed partial class uScript : EditorWindow
       var path = Application.dataPath;
       var searchPattern = string.Format("{0}.*", nodeType);
 
+      var searchPaths = new List<string> { path };
+
+      // uScript may be installed as a package outside of the Assets folder
+      var root = uScriptConfig.ConstantPaths.Root;
+      if (!string.IsNullOrEmpty(root) && Directory.Exists(root)
+          && !root.Replace('\\', '/').StartsWith(path.Replace('\\', '/') + "/", IgnoreCase))
+      {
+         searchPaths.Add(root);
+      }
+
       var files =
-         Directory.GetFiles(path, searchPattern, SearchOption.AllDirectories)
+         searchPaths.SelectMany(p => Directory.GetFiles(p, searchPattern, SearchOption.AllDirectories))
             .Where(
                s => s.EndsWith(".cs", IgnoreCase) || s.EndsWith(".js", IgnoreCase) || s.EndsWith(".boo", IgnoreCase))
             .ToList();
