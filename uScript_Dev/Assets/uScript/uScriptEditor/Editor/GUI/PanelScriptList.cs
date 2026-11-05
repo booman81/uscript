@@ -51,7 +51,11 @@ namespace Detox.Editor.GUI
 
             this.RequestListUpdate();
 
+#if UNITY_2018_1_OR_NEWER
+            EditorApplication.projectChanged += this.RequestListUpdate;
+#else
             EditorApplication.projectWindowChanged += this.RequestListUpdate;
+#endif
             uScript.GraphSaved += this.RequestListUpdate;
          }
 

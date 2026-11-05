@@ -23,3 +23,19 @@ This code is provided as-is under the MIT license. Detox Studios has sunsetted u
 
 
 www.detoxstudios.com
+
+
+** Using uScript with Unity 6 (and 2020+) **
+
+Copy the `uScript_Dev/Assets/uScript` folder into your project's `Assets` folder.
+
+* Legacy input: uScript's input nodes use the classic `UnityEngine.Input` API. New Unity 6
+  projects default to the Input System package only, so set
+  Edit > Project Settings > Player > Other Settings > Active Input Handling to "Both"
+  (or "Input Manager (Old)").
+* Unity UI: the UI event/InputField nodes need the "Unity UI" (com.unity.ugui) package,
+  which is installed by default in new projects.
+* Legacy networking (Network/MasterServer) nodes are excluded automatically, as that API
+  was removed from Unity in 2018.2.
+* Rigidbody velocity, PhysicMaterial and the Hierarchy icon use the Unity 6 APIs
+  (linearVelocity, PhysicsMaterial, EntityId) when compiled in Unity 6.

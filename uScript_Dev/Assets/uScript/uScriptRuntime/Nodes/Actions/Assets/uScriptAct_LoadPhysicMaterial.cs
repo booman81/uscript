@@ -2,6 +2,9 @@
 // (C) 2011 Detox Studios LLC
 
 using UnityEngine;
+#if UNITY_6000_0_OR_NEWER
+using PhysicMaterial = UnityEngine.PhysicsMaterial;
+#endif
 using System.Collections;
 
 [NodePath("Actions/Assets")]
@@ -41,7 +44,7 @@ public class uScriptAct_LoadPhysicMaterial : uScriptLogic
       {
          PhysicMaterial ac = (PhysicMaterial)o;
 
-         string path = UnityEditor.AssetDatabase.GetAssetPath( ac.GetInstanceID( ) );
+         string path = UnityEditor.AssetDatabase.GetAssetPath( ac );
 
          int index = path.IndexOf( "Resources/" );
          

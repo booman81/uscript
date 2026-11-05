@@ -8,7 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using UnityEngine;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
 using UnityEngine.Networking;
 #endif
 
@@ -23,7 +23,7 @@ using UnityEngine.Networking;
 public class uScriptAct_WebText : uScriptLogic
 {
    private bool finished;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
     private UnityWebRequest www;
 #else
     private WWW www;
@@ -59,8 +59,9 @@ public class uScriptAct_WebText : uScriptLogic
       this.OutError = false;
 
       this.finished = false;
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
       this.www = Form == null ? UnityWebRequest.Get(URL) : UnityWebRequest.Post(URL, Form);
+      this.www.SendWebRequest();
 #else
       this.www = Form == null ? new WWW(URL) : new WWW(URL, Form);
 #endif
@@ -96,7 +97,7 @@ public class uScriptAct_WebText : uScriptLogic
          }
          else
          {
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
             result = this.www.downloadHandler.text;
 #else
             result = this.www.text;

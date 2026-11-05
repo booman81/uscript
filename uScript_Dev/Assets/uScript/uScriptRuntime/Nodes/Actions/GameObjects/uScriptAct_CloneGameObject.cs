@@ -62,7 +62,7 @@ public class uScriptAct_CloneGameObject : uScriptLogic
 				CloneTransform = Clone.transform;
 			}
 
-			InstanceID = go.GetInstanceID();
+			InstanceID = uScriptCompat.GetObjectID(go);
 			m_FinishedCloning = true;
 
 		}

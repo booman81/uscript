@@ -1,7 +1,7 @@
 // uScript Action Node
 // (C) 2010 Detox Studios LLC
 
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
 using UnityEngine.Networking;
 #else
 using UnityEngine;
@@ -99,7 +99,7 @@ public class uScriptAct_AppendURLQuery : uScriptLogic
       }
 
       // Does the value need to be escaped?
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
       string value = (EscapeValue ? UnityWebRequest.EscapeURL(Value.ToString()) : Value.ToString());
 #else
       string value = (EscapeValue ? WWW.EscapeURL(Value.ToString()) : Value.ToString());

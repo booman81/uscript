@@ -65,10 +65,11 @@ public class CodeValidator
       //leave gracefully if something is null (no longer supported)
 
 		// get the Assembly
-		Assembly asm = Assembly.GetAssembly(typeof(UnityEditorInternal.MonoScripts));
+		Assembly asm = Assembly.GetAssembly(typeof(EditorWindow));
 		if ( null == asm ) return true;
 
-		Type type = asm.GetType("UnityEditorInternal.LogEntries");
+		// LogEntries moved from UnityEditorInternal to UnityEditor in Unity 2017.1
+		Type type = asm.GetType("UnityEditor.LogEntries") ?? asm.GetType("UnityEditorInternal.LogEntries");
 		if ( null == type ) return true;
 
 		// package the types by reference
@@ -103,49 +104,56 @@ public class CodeValidator
       {
          string generatedScripts = uScriptConfig.ConstantPaths.RelativePath(Preferences.GeneratedScripts);
 
-         Type logEntryType = asm.GetType("UnityEditorInternal.LogEntry");
+         // LogEntry moved from UnityEditorInternal to UnityEditor in Unity 2017.1
+         Type logEntryType = asm.GetType("UnityEditor.LogEntry") ?? asm.GetType("UnityEditorInternal.LogEntry");
    		if ( null == logEntryType ) return true;
 
    		MethodInfo start = type.GetMethod("StartGettingEntries", new Type[]{} );
    		if ( null == start ) return true;
 
-         start.Invoke(null, new object[]{} );
-
-
-         MethodInfo getEntry = type.GetMethod("GetEntryInternal", new Type[]{typeof(int), logEntryType} );
-   		if ( null == getEntry ) return true;
-         
-         //super long logs really slow this down
-         //so just check the last 10 entries
-         int i = (numWarnings + numMessages + numErrors) - 10;
-
-         object logEntry = Activator.CreateInstance(logEntryType);
-   		if ( null == logEntry ) return true;
-
-         while ( true )
-         {
-            bool result = (bool) getEntry.Invoke(null, new object[]{i,logEntry} );
-            if ( false == result ) break;
-
-            FieldInfo field = logEntryType.GetField("condition");
-   		   if ( null == field ) return true;
-
-            string condition = field.GetValue( logEntry ) as string;
-
-            if ( condition.Contains(generatedScripts) &&
-                 condition.Contains("error CS") )
-            {
-               canCompile = false;
-               break;
-            }
-
-            ++i;
-         }
-
          MethodInfo end = type.GetMethod("EndGettingEntries", new Type[]{} );
  		   if ( null == end ) return true;
 
-         end.Invoke(null, new object[]{} );
+         MethodInfo getEntry = type.GetMethod("GetEntryInternal", new Type[]{typeof(int), logEntryType} );
+   		if ( null == getEntry ) return true;
+
+         // The message field was renamed from "condition" to "message" in newer Unity versions
+         FieldInfo field = logEntryType.GetField("message") ?? logEntryType.GetField("condition");
+         if ( null == field ) return true;
+
+         object logEntry = Activator.CreateInstance(logEntryType, true);
+   		if ( null == logEntry ) return true;
+
+         start.Invoke(null, new object[]{} );
+
+         try
+         {
+            //super long logs really slow this down
+            //so just check the last 10 entries
+            int i = Math.Max(0, (numWarnings + numMessages + numErrors) - 10);
+
+            while ( true )
+            {
+               bool result = (bool) getEntry.Invoke(null, new object[]{i,logEntry} );
+               if ( false == result ) break;
+
+               string condition = field.GetValue( logEntry ) as string;
+
+               if ( condition != null &&
+                    condition.Contains(generatedScripts) &&
+                    condition.Contains("error CS") )
+               {
+                  canCompile = false;
+                  break;
+               }
+
+               ++i;
+            }
+         }
+         finally
+         {
+            end.Invoke(null, new object[]{} );
+         }
       }
       else if ( 0 == numErrors )
       {
