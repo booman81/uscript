@@ -139,7 +139,7 @@ public class uScriptAct_SpawnPrefab : uScriptLogic
          }
 
          SpawnedGameObject = spawnedPrefab;
-         SpawnedInstancedID = spawnedPrefab.GetInstanceID();
+         SpawnedInstancedID = uScriptCompat.GetObjectID(spawnedPrefab);
 
          m_FinishedSpawning = true;
       }

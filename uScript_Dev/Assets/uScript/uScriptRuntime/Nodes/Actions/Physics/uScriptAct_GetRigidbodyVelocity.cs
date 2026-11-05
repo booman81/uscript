@@ -32,7 +32,11 @@ public class uScriptAct_GetRigidbodyVelocity : uScriptLogic
 #if (UNITY_3_5 || UNITY_4_0 || UNITY_4_1 || UNITY_4_2 || UNITY_4_3 || UNITY_4_4 || UNITY_4_5 || UNITY_4_6 || UNITY_4_7)
          Velocity = Target.rigidbody.velocity;
 #else
+#if UNITY_6000_0_OR_NEWER
+         Velocity = Target.GetComponent<Rigidbody>().linearVelocity;
+#else
          Velocity = Target.GetComponent<Rigidbody>().velocity;
+#endif
 #endif
          Magnitude = Velocity.magnitude;
       }

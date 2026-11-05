@@ -14,7 +14,7 @@ public class uScriptAct_QualitySettingsGetBlendWeights : uScriptLogic
 {
    public bool Out { get { return true; } }
 
-#if UNITY_2019
+#if UNITY_2019_1_OR_NEWER
    public void In([FriendlyName("Value", "The current value for this quality setting level.")] out SkinWeights Value)
    {
       Value = QualitySettings.skinWeights;

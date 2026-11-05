@@ -49,6 +49,6 @@ public class uScriptCon_CompareTextureTexture2D : uScriptLogic
         if (null == A && null == B)
             m_CompareValue = true;
         else if (null != A && null != B)
-            m_CompareValue = A.GetInstanceID() == B.GetInstanceID();
+            m_CompareValue = A == B;
     }
 }

@@ -31,7 +31,11 @@ namespace Detox.Editor.GUI
 
       static Control()
       {
+#if UNITY_2018_1_OR_NEWER
+         EditorApplication.hierarchyChanged += OnHierarchyChange;
+#else
          EditorApplication.hierarchyWindowChanged += OnHierarchyChange;
+#endif
 
          SearchButton = new GUIContent(
             uScriptGUI.GetSkinnedTexture("iconSearch"),

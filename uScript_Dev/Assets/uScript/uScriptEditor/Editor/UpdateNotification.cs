@@ -207,6 +207,15 @@ public class UpdateNotification : EditorWindow
    {
       webRequest = CreateWebRequest();
 
+      if (webRequest == null)
+      {
+         window.Title = Content.TitleError;
+         window.Body = new GUIContent("Unable to contact the update server.");
+         updateStatus = UpdateStatus.UpdateServerError;
+         e = null;
+         yield break;
+      }
+
       while (!webRequest.isDone)
       {
          yield return webRequest;
@@ -266,7 +275,16 @@ public class UpdateNotification : EditorWindow
             WWW.EscapeURL(Application.unityVersion),
             WWW.EscapeURL(uScript.IsUnityPro.ToString()));
 
-      return new WWW(uri);
+      try
+      {
+         return new WWW(uri);
+      }
+      catch (Exception ex)
+      {
+         // Newer Unity versions block plain HTTP requests by default (Player Settings > Allow downloads over HTTP)
+         uScriptDebug.Log("uScript update check failed: " + ex.Message, uScriptDebug.Type.Debug);
+         return null;
+      }
    }
 
    private static void ProcessWebResponse()

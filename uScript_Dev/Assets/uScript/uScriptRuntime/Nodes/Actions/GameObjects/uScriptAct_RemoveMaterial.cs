@@ -87,7 +87,7 @@ public class uScriptAct_RemoveMaterial : uScriptLogic
          Material ac = (Material)o;
 
          Hashtable hashtable = new Hashtable();
-         hashtable["Material"] = UnityEditor.AssetDatabase.GetAssetPath(ac.GetInstanceID());
+         hashtable["Material"] = UnityEditor.AssetDatabase.GetAssetPath(ac);
 
          return hashtable;
       }

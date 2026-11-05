@@ -41,7 +41,7 @@ public class uScriptAct_LoadFont : uScriptLogic
       {
          Font ac = (Font)o;
 
-         string path = UnityEditor.AssetDatabase.GetAssetPath( ac.GetInstanceID( ) );
+         string path = UnityEditor.AssetDatabase.GetAssetPath( ac );
 
          int index = path.IndexOf( "Resources/" );
          

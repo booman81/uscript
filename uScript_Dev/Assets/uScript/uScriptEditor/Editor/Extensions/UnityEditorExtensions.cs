@@ -91,6 +91,8 @@ namespace Detox.Editor.Extensions
                              };
 
          var types = GetTypes(parameters);
+         types[3] = typeof(string); // string could be null
+         types[4] = typeof(GUIStyle); // style could be null
          types[5] = typeof(string); // string could be null
          types[6] = typeof(bool).MakeByRefType(); // out bool
 
@@ -185,7 +187,23 @@ namespace Detox.Editor.Extensions
       public static object GetRecycledTextEditor()
       {
          const BindingFlags Flags = BindingFlags.NonPublic | BindingFlags.Static;
-         return GetFieldValue<object>(typeof(EditorGUI), "s_RecycledEditor", Flags);
+
+         // Older Unity versions expose s_RecycledEditor as a field. Unity 6 turned it into a
+         // lazily-initialized property (backed by s_RecycledEditorInternal), so check both.
+         var field = typeof(EditorGUI).GetField("s_RecycledEditor", Flags);
+         if (field != null)
+         {
+            return field.GetValue(null);
+         }
+
+         var property = typeof(EditorGUI).GetProperty("s_RecycledEditor", Flags);
+         if (property != null)
+         {
+            return property.GetValue(null, null);
+         }
+
+         uScriptDebug.Log("Unable to access EditorGUI.s_RecycledEditor.", uScriptDebug.Type.Error);
+         throw new ArgumentException();
       }
 
       public static Type[] GetTypes(IEnumerable<object> objects)

@@ -210,13 +210,13 @@ namespace Detox.Editor
 
       public static bool PingObject(string assetPathRelativeToProject, Type type)
       {
-         var instanceID = uScript.GetAssetInstanceID(assetPathRelativeToProject, type);
-         if (instanceID == -1)
+         var asset = AssetDatabase.LoadAssetAtPath(assetPathRelativeToProject, type);
+         if (asset == null)
          {
             return false;
          }
 
-         EditorGUIUtility.PingObject(instanceID);
+         EditorGUIUtility.PingObject(asset);
          return true;
       }
 
@@ -244,7 +244,7 @@ namespace Detox.Editor
             return false;
          }
 
-         EditorGUIUtility.PingObject(obj.GetInstanceID());
+         EditorGUIUtility.PingObject(obj);
          return true;
       }
 
@@ -304,7 +304,7 @@ namespace Detox.Editor
          }
          else
          {
-            EditorGUIUtility.PingObject(obj.GetInstanceID());
+            EditorGUIUtility.PingObject(obj);
          }
       }
 

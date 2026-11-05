@@ -9,7 +9,17 @@
 
 public class uScriptUnityVersion : uScriptIUnityVersion
 {
-#if UNITY_3_5
+#if UNITY_6000_0_OR_NEWER
+   public float Version { get { return 6000.0f; } }
+#elif UNITY_2023_1_OR_NEWER
+   public float Version { get { return 2023.0f; } }
+#elif UNITY_2022_1_OR_NEWER
+   public float Version { get { return 2022.0f; } }
+#elif UNITY_2021_1_OR_NEWER
+   public float Version { get { return 2021.0f; } }
+#elif UNITY_2020_1_OR_NEWER
+   public float Version { get { return 2020.0f; } }
+#elif UNITY_3_5
    public float Version { get { return 3.5f; } }
 #elif UNITY_4_6
    public float Version { get { return 4.6f; } }

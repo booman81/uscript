@@ -32,7 +32,11 @@ public class uScriptBackgroundProcess
    {
       GraphInfoList = new Dictionary<string, GraphInfo>();
 
+#if UNITY_2018_1_OR_NEWER
+      EditorApplication.projectChanged += ForceFileRefresh;
+#else
       EditorApplication.projectWindowChanged += ForceFileRefresh;
+#endif
       EditorApplication.update += Update;
    }
 

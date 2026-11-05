@@ -21,17 +21,33 @@ namespace Detox.Editor.GUI
       static HierarchyWindowIcon()
       {
          ComponentIcon = uScriptGUI.GetTexture("iconScriptFile02");
+#if UNITY_6000_4_OR_NEWER
+         EditorApplication.hierarchyWindowItemByEntityIdOnGUI += HierarchyWindowItemOnGUI;
+#else
          EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
+#endif
       }
 
+#if UNITY_6000_4_OR_NEWER
+      private static void HierarchyWindowItemOnGUI(EntityId entityId, Rect selectionRect)
+      {
+         OnItemGUI(EditorUtility.EntityIdToObject(entityId) as GameObject, selectionRect);
+      }
+#else
       private static void HierarchyWindowItemOnGUI(int instanceID, Rect selectionRect)
+      {
+         OnItemGUI(EditorUtility.InstanceIDToObject(instanceID) as GameObject, selectionRect);
+      }
+#endif
+
+      private static void OnItemGUI(GameObject go, Rect selectionRect)
       {
          if (EditorApplication.isPlayingOrWillChangePlaymode)
          {
             return;
          }
 
-         if (Preferences.ShowHierarchyIcon && HasValidComponent(instanceID))
+         if (Preferences.ShowHierarchyIcon && HasValidComponent(go))
          {
             DrawIcon(selectionRect);
          }
@@ -58,9 +74,8 @@ namespace Detox.Editor.GUI
          return rect;
       }
 
-      private static bool HasValidComponent(int instanceID)
+      private static bool HasValidComponent(GameObject go)
       {
-         var go = (GameObject)EditorUtility.InstanceIDToObject(instanceID);
          return go != null
                 && (go.GetComponent<uScriptEvent>() != null || go.GetComponent<uScriptCode>() != null
                     || go.GetComponent<uScript_MasterComponent>() != null);
