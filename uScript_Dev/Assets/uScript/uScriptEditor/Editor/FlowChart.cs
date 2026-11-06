@@ -60,16 +60,6 @@ namespace Detox.FlowChart
          Invalidate( );  // SetViewport
       }
 
-      /// <summary>Records node position changes (made by code, e.g. Align) as one undo step.</summary>
-      public void CommitNodeMoves( Node[] nodes )
-      {
-         if ( null != nodes && nodes.Length > 0 )
-         {
-            OnNodesModified( nodes );
-            Invalidate( );  // CommitNodeMoves
-         }
-      }
-
       // === Socket hover ==========================================================================================
 
       private Node m_HoverSocketNode;

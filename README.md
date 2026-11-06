@@ -80,9 +80,8 @@ scripts no longer recompiles uScript.
 * Rename / Delete Graph from the graph list or File menu (other graphs that use a renamed
   graph are updated).
 * Canvas navigation: F frames the selected nodes (all nodes if none are selected), A frames
-  all nodes. The mouse wheel and the -/= keys zoom toward the mouse.
-* Align (Left/Center/Right/Top/Middle/Bottom, 2+ nodes) and Distribute (Horizontally/
-  Vertically, 3+ nodes) in the right-click and View menus. Each is one undo step.
+  all nodes (also in the right-click and View menus). The mouse wheel and the -/= keys
+  zoom toward the mouse.
 * Sockets are easier to hit and highlight when the mouse is over them.
 * Removed: the update check, license/promotion/welcome windows and other features that
   depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.
