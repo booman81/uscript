@@ -512,9 +512,7 @@ namespace Detox.Editor.GUI.Windows
             this.DrawCommand("Frame selected nodes (all if none)", "[F]");
             this.DrawCommand("Frame all nodes", "[A]");
             this.DrawCommand("Show / hide the minimap", "[M]");
-            this.DrawCommand("Remove all links of a socket", "[Alt]+Click socket");
             this.DrawCommand("Delete a link", "[Alt]+Click link");
-            this.DrawCommand("Delete a node or variable", "[Alt]+Click node");
 
             EditorGUILayout.Space();
 

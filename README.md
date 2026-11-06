@@ -83,8 +83,7 @@ scripts no longer recompiles uScript.
   all nodes (also in the right-click and View menus). The mouse wheel and the -/= keys
   zoom toward the mouse.
 * Sockets are easier to hit and highlight when the mouse is over them.
-* Alt+click to delete: on a link deletes that link, on a socket removes all of its links,
-  on a node or variable deletes it. Each is one undo step; Alt+drag still pans.
+* Alt+click a link to delete it (one undo step). Alt+drag still pans.
 * Drag a link onto empty canvas: Quick Add opens with only the nodes that can connect to
   that socket, and the chosen node is placed and connected.
 * Graph tabs: several graphs open at once. Unsaved changes stay in their tab when you

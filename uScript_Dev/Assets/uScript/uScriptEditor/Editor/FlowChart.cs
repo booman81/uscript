@@ -333,14 +333,8 @@ namespace Detox.FlowChart
          Controls.Sort(CompareNodes);
       }
 
-      /// <summary>Raised when the user Alt+clicks a socket to remove all of its links.</summary>
-      public event Action<Node, string> SocketDisconnectRequested;
-
       /// <summary>Raised when the user Alt+clicks a link to delete it.</summary>
       public event Action<Link> LinkDeleteRequested;
-
-      /// <summary>Raised when the user Alt+clicks a node (not on a socket) to delete it.</summary>
-      public event Action<Node> NodeDeleteRequested;
 
       private bool m_AltClickHandled = false;
 
@@ -1048,34 +1042,18 @@ namespace Detox.FlowChart
             return;
          }
 
-         // Alt+click (without dragging, which pans) deletes what was clicked:
-         // a socket -> all of its links, a link drawn over a comment box -> that link, a node -> the node
+         // Alt+click (without dragging, which pans) on a link drawn over a node deletes that link
          if ( e.Button == MouseButtons.Left && true == Control.ModifierKeys.Contains(Keys.Alt) &&
-              true == UserProbablyDidntMeanToMoveMouse( ) )
+              true == UserProbablyDidntMeanToMoveMouse( ) && null != LinkDeleteRequested )
          {
             Node clickedNode = sender as Node;
-            AnchorPoint clickedSocket = new AnchorPoint( );
             Link clickedLink;
 
-            if ( null != clickedNode )
+            if ( null != clickedNode && clickedNode.RenderDepth < FlowChartCtrl.LinkRenderDepth && true == MouseOverLink(out clickedLink) )
             {
                m_AltClickHandled = true;
-
-               if ( true == clickedNode.PointInAnchorPoint(clickedNode.PointToClient(Detox.Windows.Forms.Cursor.ScaledPosition), ref clickedSocket) &&
-                    false == string.IsNullOrEmpty(clickedSocket.Name) )
-               {
-                  if ( null != SocketDisconnectRequested ) SocketDisconnectRequested( clickedNode, clickedSocket.Name );
-               }
-               else if ( clickedNode.RenderDepth < FlowChartCtrl.LinkRenderDepth && true == MouseOverLink(out clickedLink) )
-               {
-                  if ( null != LinkDeleteRequested ) LinkDeleteRequested( clickedLink );
-               }
-               else
-               {
-                  if ( null != NodeDeleteRequested ) NodeDeleteRequested( clickedNode );
-               }
-
-               Invalidate( );  // Alt+click delete
+               LinkDeleteRequested( clickedLink );
+               Invalidate( );  // Alt+click link delete
             }
          }
 
@@ -1224,7 +1202,7 @@ namespace Detox.FlowChart
             return;
          }
 
-         // Alt+click on a link (on empty canvas) deletes the link; a node that was Alt+clicked was handled already
+         // Alt+click on a link deletes it (unless it was already handled over a node)
          bool altClickHandled = m_AltClickHandled;
          m_AltClickHandled = false;
 
