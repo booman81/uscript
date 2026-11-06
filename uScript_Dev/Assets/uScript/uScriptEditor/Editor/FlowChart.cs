@@ -1677,6 +1677,93 @@ namespace Detox.FlowChart
             end.X += Location.X;
             end.Y += Location.Y;
 
+            //control point 1
+            //is 25% of the X length and only 10% of the Y length
+            PointF control1 = new PointF(
+               (start.X + (end.X - start.X) * .25f),
+               (start.Y + (end.Y - start.Y) * .10f) );
+
+            //control point 2
+            //is 75% of the X length and 90% of the Y length
+            PointF control2 = new PointF(
+               (start.X + (end.X - start.X) * .75f),
+               (start.Y + (end.Y - start.Y) * .90f) );
+
+            // New socket links
+            Handles.color = new UnityEngine.Color( selectedPen.Color.FR, selectedPen.Color.FG, selectedPen.Color.FB );
+            Handles.DrawBezier( new UnityEngine.Vector3(start.X, start.Y, 0), new UnityEngine.Vector3(end.X, end.Y, 0),
+                                new UnityEngine.Vector3(control1.X, control1.Y, 0), new UnityEngine.Vector3(control2.X, control2.Y, 0),
+                                 Handles.color, uScriptConfig.LineTexture, selectedPen.Width );
+            // The end of the new socket link
+            UnityEngine.GUI.Box( new UnityEngine.Rect(end.X - uScriptConfig.PointerLineEnd.width / 2, end.Y - uScriptConfig.PointerLineEnd.height / 2,
+                                 uScriptConfig.PointerLineEnd.width, uScriptConfig.PointerLineEnd.height),
+                                 uScriptConfig.PointerLineEnd);
+         }
+
+         int i;
+         List<Control> visibleList = new List<Control>();
+         Hashtable visibleHash = new Hashtable();
+
+         // pare down list to only visible nodes
+         for (i = 0; i < Controls.Count; i++)
+         {
+            Node node = Controls[i] as Node;
+            
+            if (node.IsVisible(visibleRect) || Detox.Editor.ExportPNG.IsExporting)
+            {
+               visibleList.Add(node);
+               visibleHash[ node.Guid ] = node;
+            }
+         }
+
+         // render pre-link nodes
+         for (i = 0; i < visibleList.Count; i++)
+         {
+            Node node = visibleList[i] as Node;
+            if (node != null)
+            {
+               if (node.RenderDepth >= LinkRenderDepth)
+               {
+                  break;
+               }
+
+               node.OnPaint(e);
+            }
+         }
+
+         // render links
+         foreach (Link link in m_Links)
+         {
+            //ignore links which don't have visible nodes
+            //drawing these lines taxes performance
+            if ( false == visibleHash.Contains(link.Source.Node.Guid) &&
+                 false == visibleHash.Contains(link.Destination.Node.Guid) )
+            {
+               continue;
+            }
+
+            //PointF start = new PointF( link.Source.Anchor.X / 100.0f * link.Source.Node.ZoomSize.Width,
+            //                           link.Source.Anchor.Y / 100.0f * link.Source.Node.ZoomSize.Height );
+            PointF start = new PointF( link.Source.Anchor.X / 100.0f * link.Source.Node.Size.Width,
+                                       link.Source.Anchor.Y / 100.0f * link.Source.Node.Size.Height );
+
+            start  = link.Source.Node.PointToScreen( start );
+            start  = PointToClient( start );
+
+            start.X += Location.X;
+            start.Y += Location.Y;
+
+            //PointF end = new PointF( link.Destination.Anchor.X / 100.0f * link.Destination.Node.ZoomSize.Width,
+            //                         link.Destination.Anchor.Y / 100.0f * link.Destination.Node.ZoomSize.Height );
+            PointF end = new PointF( link.Destination.Anchor.X / 100.0f * link.Destination.Node.Size.Width,
+                                     link.Destination.Anchor.Y / 100.0f * link.Destination.Node.Size.Height );
+
+            end  = link.Destination.Node.PointToScreen( end );
+            end  = PointToClient( end );
+
+            end.X += Location.X;
+            end.Y += Location.Y;
+
             // Line color and width
             UnityEngine.Color lineColor;
 
