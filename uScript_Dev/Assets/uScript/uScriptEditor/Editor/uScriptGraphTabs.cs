@@ -43,6 +43,9 @@ public sealed partial class uScript
       public string ScriptName = string.Empty;
       public bool Dirty;
       public string CanvasPosition = string.Empty;
+
+      /// <summary>Zoom when the tab was left (0 = not known).</summary>
+      public float Zoom;
    }
 
    private GraphTab ActiveGraphTab
@@ -170,6 +173,27 @@ public sealed partial class uScript
       this.activeGraphTab = -1;
    }
 
+   /// <summary>Puts the view (scroll position and zoom) back to where it was when the tab was left.</summary>
+   private void RestoreTabView(GraphTab tab)
+   {
+      if (tab == null || m_ScriptEditorCtrl == null || string.IsNullOrEmpty(tab.CanvasPosition))
+      {
+         return;
+      }
+
+      var parts = tab.CanvasPosition.Split(',');
+      int x, y;
+      if (parts.Length != 2 || !int.TryParse(parts[0], out x) || !int.TryParse(parts[1], out y))
+      {
+         return;
+      }
+
+      var zoom = tab.Zoom > 0 ? Mathf.Clamp(tab.Zoom, 0.1f, 1.0f) : this.mapScale;
+      this.mapScale = zoom;
+      m_ScriptEditorCtrl.FlowChart.SetViewport(zoom, new Detox.Drawing.Point(x, y));
+      this.currentCanvasPosition = tab.CanvasPosition;
+   }
+
    /// <summary>Runs on Layout: follows Save As / first save, and drops tabs whose file is gone.</summary>
    private void SyncGraphTabs()
    {
@@ -248,6 +272,13 @@ public sealed partial class uScript
 
       var location = m_ScriptEditorCtrl.FlowChart.Location;
       tab.CanvasPosition = location.X + "," + location.Y;
+      tab.Zoom = this.mapScale;
+
+      // Also remember it for when the graph is opened from the file again
+      if (!string.IsNullOrEmpty(tab.Path))
+      {
+         SetSetting("uScript\\" + uScriptConfig.ConstantPaths.RelativePath(tab.Path) + "\\CanvasPosition", tab.CanvasPosition);
+      }
 
       return true;
    }
@@ -271,6 +302,8 @@ public sealed partial class uScript
       {
          m_ScriptEditorCtrl.IsDirty = tab.Dirty;
       }
+
+      this.RestoreTabView(tab);
 
       SetSetting(
          "uScript\\LastOpened",

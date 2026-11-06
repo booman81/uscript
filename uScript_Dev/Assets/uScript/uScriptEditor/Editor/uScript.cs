@@ -3818,6 +3818,9 @@ public sealed partial class uScript : EditorWindow
 
          this.SetActiveGraphTab(fullPath);
 
+         // Coming back to a tab: same scroll position and zoom as when it was left
+         this.RestoreTabView(this.ActiveGraphTab);
+
          //uScriptBackgroundProcess.ForceFileRefresh();
 
          p.End();
