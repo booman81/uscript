@@ -39,9 +39,10 @@ namespace Detox.ScriptEditor
          chartLink.Tag = newLink;
          m_Dirty = true;
 
+         // The canvas already shows the new shape; only record it (undo also keeps the cached graph up to date)
          var patch = new Patch.EntityNode("Reroute Link", oldLink, newLink);
          uScript.Instance.RegisterUndo(patch);
-         PatchDisplay(patch);
+         OnScriptModified();
       }
 
       /// <summary>Removes all reroute points from the selected links.</summary>
@@ -69,7 +70,7 @@ namespace Detox.ScriptEditor
          {
             m_Dirty = true;
             uScript.Instance.RegisterUndo(batch);
-            PatchDisplay(batch);
+            OnScriptModified();
          }
       }
    }

@@ -589,9 +589,14 @@ namespace Detox.FlowChart
          float length = (float) Math.Sqrt( deltaX * deltaX + deltaY * deltaY );
          float magSq;
 
-         for ( int i = 0; i < length; i++ )
+         if ( float.IsNaN(length) || float.IsInfinity(length) ) return false;
+
+         // One sample per pixel of length, but never more than a fixed number
+         int steps = (int) Math.Min( length, 4000.0f );
+
+         for ( int i = 0; i < steps; i++ )
          {
-            float t = i / length;
+            float t = i / (float) steps;
 
             float pX = (float)
                          (Math.Pow(1.0f - t, 3.0f) * start.X +
@@ -718,6 +723,12 @@ namespace Detox.FlowChart
 
       private void RouteMouseMove( )
       {
+         if ( Control.MouseButtons != MouseButtons.Left )
+         {
+            RouteMouseUp( );
+            return;
+         }
+
          Point position = PointToClient( Detox.Windows.Forms.Cursor.ScaledPosition );
 
          if ( Preferences.GridSnap && Preferences.GridSize > 0 )
@@ -1827,6 +1838,10 @@ namespace Detox.FlowChart
                PointF segEnd   = route[ segment + 1 ];
                PointF control1, control2;
                LinkRoute.Controls( segStart, segEnd, out control1, out control2 );
+
+               float segDX = segEnd.X - segStart.X;
+               float segDY = segEnd.Y - segStart.Y;
+               if ( segDX * segDX + segDY * segDY < 1.0f ) continue;
 
                Handles.DrawBezier( new UnityEngine.Vector3(segStart.X, segStart.Y, 0), new UnityEngine.Vector3(segEnd.X, segEnd.Y, 0),
                                    new UnityEngine.Vector3(control1.X, control1.Y, 0), new UnityEngine.Vector3(control2.X, control2.Y, 0),
