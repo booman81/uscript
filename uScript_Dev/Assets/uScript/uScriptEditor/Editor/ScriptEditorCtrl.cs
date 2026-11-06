@@ -460,13 +460,8 @@ namespace Detox.ScriptEditor
 
       public void CenterOnNode(Node node)
       {
-         // center on the center for now - later, we'll calculate zoom amount, etc.
-         int halfWidth = (int)(uScript.Instance.NodeWindowRect.width / 2.0f);
-         int halfHeight = (int)(uScript.Instance.NodeWindowRect.height / 2.0f);
-         Point center = new Point(node.Bounds.Left + node.Bounds.Width / 2, node.Bounds.Top + node.Bounds.Height / 2);
-         m_FlowChart.Location = new Point( Math.Min(0, Math.Max(-System.UInt16.MaxValue, -center.X + halfWidth)),
-                                           Math.Min(0, Math.Max(-System.UInt16.MaxValue, -center.Y + halfHeight - (int)uScript.Instance.NodeToolbarRect.height)));
-         m_FlowChart.Invalidate( );  // CenterOnNode
+         // Center at the current zoom level
+         uScript.Instance.CenterCanvasOn(node.Bounds.Left + node.Bounds.Width / 2.0f, node.Bounds.Top + node.Bounds.Height / 2.0f);
       }
 
       public void SelectNode(Guid guid)

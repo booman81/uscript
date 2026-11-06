@@ -37,6 +37,39 @@ namespace Detox.FlowChart
 
       public Node LinkStartNode { get { return m_StartLinkNode; } }
 
+      /// <summary>
+      /// Sets zoom and scroll position directly (used by Frame Selected / Frame All). Unlike the ZoomPoint setter,
+      /// this does not move the canvas to keep a point fixed.
+      /// </summary>
+      public void SetViewport( float zoom, Point location )
+      {
+         Zoom = zoom;
+
+         if ( m_PrevZoom != zoom )
+         {
+            m_PrevZoom = zoom;
+            uScriptGUI.AntiAlias( zoom );
+
+            foreach ( Node n in m_Nodes.Values )
+            {
+               n.PreparePoints( );
+            }
+         }
+
+         Location = location;
+         Invalidate( );  // SetViewport
+      }
+
+      /// <summary>Records node position changes (made by code, e.g. Align) as one undo step.</summary>
+      public void CommitNodeMoves( Node[] nodes )
+      {
+         if ( null != nodes && nodes.Length > 0 )
+         {
+            OnNodesModified( nodes );
+            Invalidate( );  // CommitNodeMoves
+         }
+      }
+
       // === Socket hover ==========================================================================================
 
       private Node m_HoverSocketNode;

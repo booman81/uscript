@@ -1529,6 +1529,8 @@ public sealed partial class uScript : EditorWindow
                this.Repaint();
             });
          this._canvasContextMenu.AddSeparator(string.Empty);
+         this.AddLayoutMenuItems(this._canvasContextMenu, string.Empty);
+         this._canvasContextMenu.AddSeparator(string.Empty);
 
          ContextMenuStrip contextMenu = (Control.ModifierKeys.Pressed & Keys.Shift) != 0 ?
             m_ScriptEditorCtrl.ContextMenuWithReflection :
@@ -2201,9 +2203,8 @@ public sealed partial class uScript : EditorWindow
             {
                const float Divisor = 300 / 9f;
 
-               this.zoomPoint = new Vector2(
-                  Detox.Windows.Forms.Cursor.AbsolutePosition.X,
-                  Detox.Windows.Forms.Cursor.AbsolutePosition.Y);
+               // Zoom toward the mouse as it is right now (the cached cursor can be stale)
+               this.zoomPoint = e.mousePosition - _canvasRect.position;
 
                float newScale = Mathf.Clamp(this.mapScale - Mathf.Clamp(e.delta.y / Divisor, -1, 1), 0.1f, 1.0f);
 
@@ -2843,13 +2844,13 @@ public sealed partial class uScript : EditorWindow
    public void CommandCanvasZoomIn()
    {
       this.mapScale = Mathf.Min(this.mapScale + 0.09f, 1.0f);
-      this.zoomPoint = new Vector2(this._canvasRect.width * 0.5f, this._canvasRect.height * 0.5f);
+      this.zoomPoint = this.GetZoomAnchor();
    }
 
    public void CommandCanvasZoomOut()
    {
       this.mapScale = Mathf.Max(this.mapScale - 0.09f, 0.1f);
-      this.zoomPoint = new Vector2(this._canvasRect.width * 0.5f, this._canvasRect.height * 0.5f);
+      this.zoomPoint = this.GetZoomAnchor();
    }
 
    public static void CommandCanvasLocateOrigin()
@@ -2882,6 +2883,7 @@ public sealed partial class uScript : EditorWindow
    public void CommandCanvasZoomReset()
    {
       this.mapScale = 1.0f;
+      this.zoomPoint = this.GetZoomAnchor();
    }
 
    public static void FileMenuItem_New()
@@ -3225,6 +3227,9 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindCanvasOrigin, false, CommandCanvasLocateOrigin);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindNextEvent, false, this.CommandCanvasLocateNextEvent);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindPreviousEvent, false, this.CommandCanvasLocatePreviousEvent);
+
+      menu.AddSeparator(string.Empty);
+      this.AddLayoutMenuItems(menu, string.Empty);
 
       menu.AddSeparator(string.Empty);
 

@@ -509,6 +509,8 @@ namespace Detox.Editor.GUI.Windows
             this.DrawCommand("Reset Zoom to 100%", "[Alpha0]");
             this.DrawCommand("Zoom Out by 10%", "[Minus]", "Scroll [Wheel] down");
             this.DrawCommand("Zoom In by 10%", "[Equals]", "Scroll [Wheel] up");
+            this.DrawCommand("Frame selected nodes (all if none)", "[F]");
+            this.DrawCommand("Frame all nodes", "[A]");
 
             EditorGUILayout.Space();
 

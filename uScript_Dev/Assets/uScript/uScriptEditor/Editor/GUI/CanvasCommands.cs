@@ -43,6 +43,8 @@ namespace Detox.Editor.GUI
          Add(Keys.None, KeyCode.Alpha0, Command.ZoomReset);
          Add(Keys.None, KeyCode.Menu, Command.ShowCanvasContextMenu);
          Add(Keys.None, KeyCode.Space, Command.QuickAddNode);
+         Add(Keys.None, KeyCode.F, Command.FrameSelected);
+         Add(Keys.None, KeyCode.A, Command.FrameAll);
 
          Add(Keys.Control, KeyCode.F, Command.OpenFileMenu);
          Add(Keys.Control, KeyCode.G, Command.ToggleGrid);
@@ -155,11 +157,25 @@ namespace Detox.Editor.GUI
          return Commands.ContainsKey(GetHashCode(modifiers, keyCode, button));
       }
 
+      // A key that was held while clicking (e.g. F+Click places a Float). Its release must not also run the
+      // key's own command (F = Frame Selected).
+      private static KeyCode suppressedKeyUp = KeyCode.None;
+
       public static bool Invoke(
          int modifiers = Keys.None,
          KeyCode keyCode = KeyCode.None,
          int button = MouseButtons.None)
       {
+         if (button != MouseButtons.None && keyCode != KeyCode.None)
+         {
+            suppressedKeyUp = keyCode;
+         }
+         else if (button == MouseButtons.None && keyCode != KeyCode.None && keyCode == suppressedKeyUp)
+         {
+            suppressedKeyUp = KeyCode.None;
+            return true;
+         }
+
          Action action;
          if (Commands.TryGetValue(GetHashCode(modifiers, keyCode, button), out action))
          {
@@ -294,6 +310,16 @@ namespace Detox.Editor.GUI
          public static void QuickAddNode()
          {
             uScript.Instance.ShowQuickAddPopup();
+         }
+
+         public static void FrameSelected()
+         {
+            uScript.Instance.CommandCanvasFrameSelected();
+         }
+
+         public static void FrameAll()
+         {
+            uScript.Instance.CommandCanvasFrameAll();
          }
 
          public static void PlaceOnCanvasFavorite1()
