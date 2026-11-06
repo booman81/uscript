@@ -1344,6 +1344,8 @@ public sealed partial class uScript : EditorWindow
          this.wantsPaste = false;
       }
 
+      this.ProcessPendingNodeFocus();
+
       // Process any pending node creation request
       if (m_ScriptEditorCtrl != null && !String.IsNullOrEmpty(this.pendingNodeSignature))
       {

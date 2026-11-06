@@ -24,6 +24,77 @@ public sealed partial class uScript
 {
    private const int MaxListedUsages = 10;
 
+   private Guid pendingFocusNode = Guid.Empty;
+   private int pendingFocusUpdates;
+
+   /// <summary>
+   /// Opens uScript and the given graph (asking to save the current one if needed), then selects and centers the node.
+   /// Used by the Console "Show node in uScript" links.
+   /// </summary>
+   public static void ShowGraphNode(string graphName, Guid nodeGuid)
+   {
+      var graphPath = GetGraphPath(graphName + ".uscript");
+      if (string.IsNullOrEmpty(graphPath))
+      {
+         EditorUtility.DisplayDialog("uScript", string.Format("The graph \"{0}\" could not be found in this project.", graphName), "OK");
+         return;
+      }
+
+      Detox.Editor.EditorCommands.OpenEditorWindow();
+      var instance = Instance;
+      if (instance == null)
+      {
+         return;
+      }
+
+      if (!instance.IsOpenGraph(graphPath) && !instance.OpenGraph(graphPath, false))
+      {
+         return;
+      }
+
+      instance.Focus();
+
+      if (nodeGuid != Guid.Empty)
+      {
+         // Applied over the next few updates, after the graph has restored its saved canvas position
+         instance.pendingFocusNode = nodeGuid;
+         instance.pendingFocusUpdates = 3;
+      }
+
+      RequestRepaint(3);
+   }
+
+   /// <summary>Called from Update(): selects and centers a node requested by ShowGraphNode().</summary>
+   private void ProcessPendingNodeFocus()
+   {
+      if (this.pendingFocusUpdates <= 0 || this.pendingFocusNode == Guid.Empty || this.m_ScriptEditorCtrl == null)
+      {
+         return;
+      }
+
+      this.pendingFocusUpdates--;
+
+      var node = this.m_ScriptEditorCtrl.GetNode(this.pendingFocusNode);
+      if (node == null)
+      {
+         if (this.pendingFocusUpdates == 0)
+         {
+            uScriptDebug.Log("The node could not be found in the graph. It may have been deleted since the error happened.", uScriptDebug.Type.Warning);
+         }
+
+         return;
+      }
+
+      this.m_ScriptEditorCtrl.SelectNodes(new[] { this.pendingFocusNode }, false);
+      this.m_ScriptEditorCtrl.CenterOnNode(node);
+      this.Repaint();
+
+      if (this.pendingFocusUpdates == 0)
+      {
+         this.pendingFocusNode = Guid.Empty;
+      }
+   }
+
    /// <summary>
    /// Renames a graph and its generated scripts. The generated scripts are moved (not recreated), so they keep
    /// their GUIDs and every scene or prefab that uses the graph's component stays connected.

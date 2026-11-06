@@ -1100,10 +1100,50 @@ namespace Detox.ScriptEditor
             --m_TabStack;
 
             EndClass();
+
+            if (false == stubCode)
+            {
+               DefineNodeMap();
+            }
          }
 
          p.End();
          return m_CSharpString.ToString();
+      }
+
+      /// <summary>
+      /// Writes, as comments, which node each generated id belongs to ("Relay_In_823" -> node Guid). uScript uses it
+      /// to show the node behind a Console error. Comments only, so there is no runtime cost.
+      /// </summary>
+      private void DefineNodeMap()
+      {
+         AddCSharpLine("");
+         AddCSharpLine("// uScript node map: lets uScript find the node behind a Console error. Format: id guid name");
+
+         var ids = new List<KeyValuePair<int, Guid>>();
+         foreach (DictionaryEntry entry in m_GuidToId)
+         {
+            ids.Add(new KeyValuePair<int, Guid>((int)entry.Value, (Guid)entry.Key));
+         }
+
+         foreach (var id in ids.OrderBy(pair => pair.Key))
+         {
+            var name = string.Empty;
+            try
+            {
+               var node = m_Script.GetNode(id.Value);
+               if (node != null)
+               {
+                  name = uScript.FindFriendlyName(node) ?? string.Empty;
+               }
+            }
+            catch (Exception)
+            {
+               // The name is only informative
+            }
+
+            AddCSharpLine("// uScriptNode " + id.Key + " " + id.Value + " " + name.Replace("\r", " ").Replace("\n", " "));
+         }
       }
 
       private void DeclareNamespaces()

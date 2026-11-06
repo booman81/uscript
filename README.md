@@ -74,6 +74,9 @@ scripts no longer recompiles uScript.
   to its nodes (click again for the next one), double-click or right-click to rename,
   edit the value and Exposed/Hidden settings, + to create a variable, drag a variable onto
   the canvas to place another node of it. Warns when two variables share a name but not a type.
+* Console errors from graphs: an extra Console line names the graph and node that caused
+  the error, with a "Show node in uScript" link that opens the graph and selects the node.
+  (Graphs saved with this version include a small node map in their generated code.)
 * Rename / Delete Graph from the graph list or File menu (other graphs that use a renamed
   graph are updated).
 * Removed: the update check, license/promotion/welcome windows and other features that
