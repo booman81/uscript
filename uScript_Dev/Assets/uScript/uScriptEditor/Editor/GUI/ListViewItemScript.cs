@@ -218,6 +218,16 @@ namespace Detox.Editor.GUI
          uScript.Instance.OpenGraph(this.GraphPath, false);
       }
 
+      private void CommandGraphRename()
+      {
+         Detox.Editor.GUI.Windows.RenameGraphWindow.Open(this.GraphPath);
+      }
+
+      private void CommandGraphDelete()
+      {
+         uScript.Instance.DeleteGraph(this.GraphPath);
+      }
+
       private void CommandGraphLocate()
       {
          uScriptGUI.PingProjectGraph(this.GraphPath);
@@ -303,6 +313,11 @@ namespace Detox.Editor.GUI
 
                menu.AddItem(Content.RemoveSource, false, this.CommandSourceRemove);
             }
+
+            menu.AddSeparator(string.Empty);
+
+            menu.AddItem(Content.RenameGraph, false, this.CommandGraphRename);
+            menu.AddItem(Content.DeleteGraph, false, this.CommandGraphDelete);
          }
 
          menu.AddSeparator(string.Empty);
@@ -493,6 +508,8 @@ namespace Detox.Editor.GUI
             LocateSource = new GUIContent("Locate Source");
             ReloadGraph = new GUIContent("Reload Graph");
             RemoveSource = new GUIContent("Remove Source");
+            RenameGraph = new GUIContent("Rename Graph...");
+            DeleteGraph = new GUIContent("Delete Graph...");
 
             // Attempt to get the built-in folder icon
             IconFolder = EditorGUIUtility.FindTexture("Folder Icon");
@@ -520,6 +537,10 @@ namespace Detox.Editor.GUI
          public static GUIContent ReloadGraph { get; private set; }
 
          public static GUIContent RemoveSource { get; private set; }
+
+         public static GUIContent RenameGraph { get; private set; }
+
+         public static GUIContent DeleteGraph { get; private set; }
 
          public static Texture2D IconFolder { get; private set; }
 

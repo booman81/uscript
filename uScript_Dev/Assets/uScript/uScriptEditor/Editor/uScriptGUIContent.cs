@@ -66,6 +66,8 @@ public static class uScriptGUIContent
       FileMenuItemFindMissingGraphs = new GUIContent("Find Missing Graphs");
       FileMenuItemRebuildGraphs = new GUIContent("Rebuild All Graphs");
       FileMenuItemRemoveSource = new GUIContent("Remove Generated Code");
+      FileMenuItemRenameGraph = new GUIContent("Rename Graph...");
+      FileMenuItemDeleteGraph = new GUIContent("Delete Graph...");
 
       ViewMenu = new GUIContent("View");
       ViewMenuItemPanels = new GUIContent("Show Panels/All _`");
@@ -266,6 +268,10 @@ public static class uScriptGUIContent
    public static GUIContent FileMenuItemRebuildGraphs { get; private set; }
 
    public static GUIContent FileMenuItemRemoveSource { get; private set; }
+
+   public static GUIContent FileMenuItemRenameGraph { get; private set; }
+
+   public static GUIContent FileMenuItemDeleteGraph { get; private set; }
 
    public static GUIContent ViewMenu { get; private set; }
 

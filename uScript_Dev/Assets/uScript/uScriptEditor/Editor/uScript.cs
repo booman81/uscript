@@ -3157,6 +3157,20 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.FileMenuItemSave, false, FileMenuItem_Save);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveAs, false, FileMenuItem_SaveAs);
       menu.AddSeparator(string.Empty);
+
+      if (string.IsNullOrEmpty(this.fullPath))
+      {
+         menu.AddDisabledItem(uScriptGUIContent.FileMenuItemRenameGraph);
+         menu.AddDisabledItem(uScriptGUIContent.FileMenuItemDeleteGraph);
+      }
+      else
+      {
+         var openGraphPath = this.fullPath;
+         menu.AddItem(uScriptGUIContent.FileMenuItemRenameGraph, false, () => Detox.Editor.GUI.Windows.RenameGraphWindow.Open(openGraphPath));
+         menu.AddItem(uScriptGUIContent.FileMenuItemDeleteGraph, false, () => this.DeleteGraph(openGraphPath));
+      }
+
+      menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveQuick, false, FileMenuItem_QuickSave);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveDebug, false, FileMenuItem_DebugSave);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveRelease, false, FileMenuItem_ReleaseSave);
