@@ -2924,28 +2924,12 @@ public sealed partial class uScript : EditorWindow
          false, false);
    }
 
-   public static void FileMenuItem_SaveXml()
-   {
-      Instance.RequestSave(
-         Preferences.SaveMethod == Preferences.SaveMethodType.Quick,
-         Preferences.SaveMethod == Preferences.SaveMethodType.Debug,
-         false, true);
-   }
-
    public static void FileMenuItem_SaveAs()
    {
       Instance.RequestSave(
          Preferences.SaveMethod == Preferences.SaveMethodType.Quick,
          Preferences.SaveMethod == Preferences.SaveMethodType.Debug,
          true, false);
-   }
-
-   public static void FileMenuItem_SaveAsXml()
-   {
-      Instance.RequestSave(
-         Preferences.SaveMethod == Preferences.SaveMethodType.Quick,
-         Preferences.SaveMethod == Preferences.SaveMethodType.Debug,
-         true, true);
    }
 
    public static void FileMenuItem_QuickSave()
@@ -3166,9 +3150,7 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.FileMenuItemOpen, false, FileMenuItem_Open);
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.FileMenuItemSave, false, FileMenuItem_Save);
-      menu.AddItem(uScriptGUIContent.FileMenuItemSaveXml, false, FileMenuItem_SaveXml);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveAs, false, FileMenuItem_SaveAs);
-      menu.AddItem(uScriptGUIContent.FileMenuItemSaveAsXml, false, FileMenuItem_SaveAsXml);
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveQuick, false, FileMenuItem_QuickSave);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveDebug, false, FileMenuItem_DebugSave);

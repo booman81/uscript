@@ -56,9 +56,7 @@ public static class uScriptGUIContent
       FileMenuItemNew = new GUIContent("New Graph &N");
       FileMenuItemOpen = new GUIContent("Open Graph... &O");
       FileMenuItemSave = new GUIContent("Save Graph &S");
-      FileMenuItemSaveXml = new GUIContent("Save Graph (xml) [EXPERIMENTAL]");
       FileMenuItemSaveAs = new GUIContent("Save Graph As... &A");
-      FileMenuItemSaveAsXml = new GUIContent("Save Graph (xml) As... [EXPERIMENTAL]");
       FileMenuItemSaveQuick = new GUIContent("Save Quick &Q");
       FileMenuItemSaveDebug = new GUIContent("Save Debug &D");
       FileMenuItemSaveRelease = new GUIContent("Save Release &R");
@@ -249,11 +247,7 @@ public static class uScriptGUIContent
 
    public static GUIContent FileMenuItemSave { get; private set; }
 
-   public static GUIContent FileMenuItemSaveXml { get; private set; }
-
    public static GUIContent FileMenuItemSaveAs { get; private set; }
-
-   public static GUIContent FileMenuItemSaveAsXml { get; private set; }
 
    public static GUIContent FileMenuItemSaveQuick { get; private set; }
 

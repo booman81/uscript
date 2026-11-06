@@ -8,9 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using UnityEngine;
-#if UNITY_2019_1_OR_NEWER
 using UnityEngine.Networking;
-#endif
 
 [NodePath("Actions/Web/Download")]
 
@@ -19,20 +17,20 @@ using UnityEngine.Networking;
 [NodeAuthor("Detox Studios LLC", "http://www.detoxstudios.com")]
 [NodeHelp("http://docs.uscript.net/#3-Working_With_uScript/3.4-Nodes.htm")]
 
-[FriendlyName("Web Text", "Download text data from the specified URL.")]
+[FriendlyName("Web Text", "Download text data from the specified URL. If Form Data is given, the form is sent with a POST request." +
+   "\n\nNote: newer Unity versions block plain http:// URLs by default. Use https://, or change" +
+   " Project Settings > Player > Other Settings > Allow downloads over HTTP.")]
 public class uScriptAct_WebText : uScriptLogic
 {
-   private bool finished;
-#if UNITY_2019_1_OR_NEWER
-    private UnityWebRequest www;
-#else
-    private WWW www;
-#endif
+   private UnityWebRequest www;
+   private bool finished = true;
+   private string startError;
 
-    // ================================================================================
-    //    Output Sockets
-    // ================================================================================
-    [FriendlyName("Out")]
+   // ================================================================================
+   //    Output Sockets
+   // ================================================================================
+   //
+   [FriendlyName("Out")]
    public bool Out { get; private set; }
 
    [FriendlyName("Success")]
@@ -44,13 +42,17 @@ public class uScriptAct_WebText : uScriptLogic
    // ================================================================================
    //    Input Sockets and Node Parameters
    // ================================================================================
+   //
    public void In(
       [FriendlyName("URL", "The URL to download")]
       string URL,
+
       [FriendlyName("Form Data", "A WWWForm instance containing the form data to post."), SocketState(false, false)]
       WWWForm Form,
+
       [FriendlyName("Result", "The downloaded data.")]
       out string Result,
+
       [FriendlyName("Error", "Returns an error message if there was an error during the download."), SocketState(false, false)]
       out string Error)
    {
@@ -58,13 +60,20 @@ public class uScriptAct_WebText : uScriptLogic
       this.OutFinished = false;
       this.OutError = false;
 
+      this.Cleanup();
       this.finished = false;
-#if UNITY_2019_1_OR_NEWER
-      this.www = Form == null ? UnityWebRequest.Get(URL) : UnityWebRequest.Post(URL, Form);
-      this.www.SendWebRequest();
-#else
-      this.www = Form == null ? new WWW(URL) : new WWW(URL, Form);
-#endif
+      this.startError = null;
+
+      try
+      {
+         this.www = Form == null ? UnityWebRequest.Get(URL) : UnityWebRequest.Post(URL, Form);
+         this.www.SendWebRequest();
+      }
+      catch (System.Exception e)
+      {
+         // e.g. "Insecure connection not allowed" for http:// URLs, or an invalid URL
+         this.startError = e.Message;
+      }
 
       Result = string.Empty;
       Error = string.Empty;
@@ -73,6 +82,7 @@ public class uScriptAct_WebText : uScriptLogic
    // ================================================================================
    //    Miscellaneous Node Functionality
    // ================================================================================
+   //
    [Driven]
    public bool Driven(out string result, out string error)
    {
@@ -86,26 +96,42 @@ public class uScriptAct_WebText : uScriptLogic
          return false;
       }
 
-      if (this.www.isDone)
+      if (this.startError != null)
+      {
+         this.finished = true;
+         error = this.startError;
+         this.OutError = true;
+         this.Cleanup();
+         return true;
+      }
+
+      if (this.www != null && this.www.isDone)
       {
          this.finished = true;
 
-         if (this.www.error != null)
+         if (!string.IsNullOrEmpty(this.www.error))
          {
             error = this.www.error;
             this.OutError = true;
          }
          else
          {
-#if UNITY_2019_1_OR_NEWER
-            result = this.www.downloadHandler.text;
-#else
-            result = this.www.text;
-#endif
+            result = this.www.downloadHandler != null ? this.www.downloadHandler.text : string.Empty;
             this.OutFinished = true;
          }
+
+         this.Cleanup();
       }
 
       return true;
+   }
+
+   private void Cleanup()
+   {
+      if (this.www != null)
+      {
+         this.www.Dispose();
+         this.www = null;
+      }
    }
 }

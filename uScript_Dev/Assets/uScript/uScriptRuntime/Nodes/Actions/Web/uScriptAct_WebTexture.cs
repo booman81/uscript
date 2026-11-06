@@ -8,9 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using UnityEngine;
-#if UNITY_2019_1_OR_NEWER
 using UnityEngine.Networking;
-#endif
 
 [NodePath("Actions/Web/Download")]
 
@@ -19,40 +17,42 @@ using UnityEngine.Networking;
 [NodeAuthor("Detox Studios LLC", "http://www.detoxstudios.com")]
 [NodeHelp("http://docs.uscript.net/#3-Working_With_uScript/3.4-Nodes.htm")]
 
-[FriendlyName("Web Texture", "Download texture data from the specified URL.")]
+[FriendlyName("Web Texture", "Download texture data (PNG or JPG) from the specified URL. If Form Data is given, the form is sent with a POST request." +
+   "\n\nNote: newer Unity versions block plain http:// URLs by default. Use https://, or change" +
+   " Project Settings > Player > Other Settings > Allow downloads over HTTP.")]
 public class uScriptAct_WebTexture : uScriptLogic
 {
-   private bool finished;
-#if UNITY_2019_1_OR_NEWER
    private UnityWebRequest www;
-#else
-   private WWW www;
-#endif
+   private bool finished = true;
+   private string startError;
 
    // ================================================================================
    //    Output Sockets
    // ================================================================================
+   //
    [FriendlyName("Out")]
    public bool Out { get; private set; }
 
    [FriendlyName("Success")]
    public bool OutFinished { get; private set; }
-   
+
    [FriendlyName("Error")]
    public bool OutError { get; private set; }
 
    // ================================================================================
    //    Input Sockets and Node Parameters
    // ================================================================================
+   //
    public void In(
       [FriendlyName("URL", "The URL to download")]
       string URL,
-#if !UNITY_2019_1_OR_NEWER
+
       [FriendlyName("Form Data", "A WWWForm instance containing the form data to post."), SocketState(false, false)]
       WWWForm Form,
-#endif
+
       [FriendlyName("Result", "The downloaded data.")]
       out Texture2D Result,
+
       [FriendlyName("Error", "Returns an error message if there was an error during the download."), SocketState(false, false)]
       out string Error)
    {
@@ -60,13 +60,29 @@ public class uScriptAct_WebTexture : uScriptLogic
       this.OutFinished = false;
       this.OutError = false;
 
+      this.Cleanup();
       this.finished = false;
-#if UNITY_2019_1_OR_NEWER
-      this.www = UnityWebRequestTexture.GetTexture(URL);
-      this.www.SendWebRequest();
-#else
-      this.www = Form == null ? new WWW(URL) : new WWW(URL, Form);
-#endif
+      this.startError = null;
+
+      try
+      {
+         if (Form == null)
+         {
+            this.www = UnityWebRequestTexture.GetTexture(URL);
+         }
+         else
+         {
+            this.www = UnityWebRequest.Post(URL, Form);
+            this.www.downloadHandler = new DownloadHandlerTexture(true);
+         }
+
+         this.www.SendWebRequest();
+      }
+      catch (System.Exception e)
+      {
+         // e.g. "Insecure connection not allowed" for http:// URLs, or an invalid URL
+         this.startError = e.Message;
+      }
 
       Result = null;
       Error = string.Empty;
@@ -75,6 +91,7 @@ public class uScriptAct_WebTexture : uScriptLogic
    // ================================================================================
    //    Miscellaneous Node Functionality
    // ================================================================================
+   //
    [Driven]
    public bool Driven(out Texture2D result, out string error)
    {
@@ -88,26 +105,52 @@ public class uScriptAct_WebTexture : uScriptLogic
          return false;
       }
 
-      if (this.www.isDone)
+      if (this.startError != null)
+      {
+         this.finished = true;
+         error = this.startError;
+         this.OutError = true;
+         this.Cleanup();
+         return true;
+      }
+
+      if (this.www != null && this.www.isDone)
       {
          this.finished = true;
 
-         if (this.www.error != null)
+         if (!string.IsNullOrEmpty(this.www.error))
          {
             error = this.www.error;
             this.OutError = true;
          }
          else
          {
-#if UNITY_2019_1_OR_NEWER
-            result = DownloadHandlerTexture.GetContent(this.www);
-#else
-            result = this.www.texture;
-#endif
-            this.OutFinished = true;
+            var handler = this.www.downloadHandler as DownloadHandlerTexture;
+            result = handler != null ? handler.texture : null;
+
+            if (result == null)
+            {
+               error = "The downloaded data is not a valid PNG or JPG image.";
+               this.OutError = true;
+            }
+            else
+            {
+               this.OutFinished = true;
+            }
          }
+
+         this.Cleanup();
       }
 
       return true;
+   }
+
+   private void Cleanup()
+   {
+      if (this.www != null)
+      {
+         this.www.Dispose();
+         this.www = null;
+      }
    }
 }
