@@ -118,7 +118,6 @@ choose is placed with its socket under the mouse and already connected. One **Ct
 
 - **Hover highlight:** sockets light up when the mouse is over them, and the area you can click is larger than before,
   so links are easier to start and finish.
-- **Delete a link:** **Alt+click** the line. This also works where the line crosses a node. **Alt+drag** still pans.
 - **Reroute points** shape a link around other nodes:
   - **Double-click a link** to add a point. Keep the mouse down to drag it straight away.
   - **Drag** a point to move it. It snaps to the grid when grid snapping is on.
@@ -232,7 +231,6 @@ Only shortcuts that are new or changed are listed here. **Help > Quick Command R
 | **A** | Frame all nodes |
 | **M** | Show / hide the minimap |
 | **Alt+V** | Variables tab |
-| **Alt+click a link** | Delete the link |
 | **Double-click a link** | Add a reroute point |
 | **Double-click a reroute point** | Remove it |
 | **Middle-click a tab** | Close the tab |

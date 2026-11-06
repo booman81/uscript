@@ -333,10 +333,6 @@ namespace Detox.FlowChart
          Controls.Sort(CompareNodes);
       }
 
-      /// <summary>Raised when the user Alt+clicks a link to delete it.</summary>
-      public event Action<Link> LinkDeleteRequested;
-
-      private bool m_AltClickHandled = false;
 
       /// <summary>Raised when a link being dragged is released over empty canvas.</summary>
       public event Action<Node, AnchorPoint> LinkDroppedOnCanvas;
@@ -1042,20 +1038,6 @@ namespace Detox.FlowChart
             return;
          }
 
-         // Alt+click (without dragging, which pans) on a link drawn over a node deletes that link
-         if ( e.Button == MouseButtons.Left && true == Control.ModifierKeys.Contains(Keys.Alt) &&
-              true == UserProbablyDidntMeanToMoveMouse( ) && null != LinkDeleteRequested )
-         {
-            Node clickedNode = sender as Node;
-            Link clickedLink;
-
-            if ( null != clickedNode && clickedNode.RenderDepth < FlowChartCtrl.LinkRenderDepth && true == MouseOverLink(out clickedLink) )
-            {
-               m_AltClickHandled = true;
-               LinkDeleteRequested( clickedLink );
-               Invalidate( );  // Alt+click link delete
-            }
-         }
 
          if ( e.Button == MouseButtons.Left && false == Control.ModifierKeys.Contains(Keys.Alt) )
          {
@@ -1202,22 +1184,6 @@ namespace Detox.FlowChart
             return;
          }
 
-         // Alt+click on a link deletes it (unless it was already handled over a node)
-         bool altClickHandled = m_AltClickHandled;
-         m_AltClickHandled = false;
-
-         if ( false == altClickHandled && e.Button == MouseButtons.Left && true == Control.ModifierKeys.Contains(Keys.Alt) &&
-              true == UserProbablyDidntMeanToMoveMouse( ) && null != LinkDeleteRequested )
-         {
-            Link clickedLink;
-            if ( true == MouseOverLink(out clickedLink) )
-            {
-               LinkDeleteRequested( clickedLink );
-               m_StartMarquee = Point.Empty;
-               Invalidate( );  // Alt+click link delete
-               return;
-            }
-         }
 
          if ( e.Button != MouseButtons.Left && e.Button != MouseButtons.Middle ) return;
 

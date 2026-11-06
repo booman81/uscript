@@ -99,33 +99,51 @@ namespace Detox.Editor.GUI.Windows
          }
 
          var entries = new List<Entry>();
-         foreach (var item in toolbox.GetAllNodeMenuItems())
+         var ctrl = uScript.Instance.ScriptEditorCtrl;
+
+         // Checking every node against the dropped socket: build the graph's link list only once
+         if (link != null)
          {
-            var node = item.Tag as EntityNode;
-            if (node == null)
+            ctrl.BeginAutoLinkChecks();
+         }
+
+         try
+         {
+            foreach (var item in toolbox.GetAllNodeMenuItems())
             {
-               continue;
+               var node = item.Tag as EntityNode;
+               if (node == null)
+               {
+                  continue;
+               }
+
+               if (link != null && !ctrl.CanAutoLink(link, node))
+               {
+                  continue;
+               }
+
+               var path = item.Path ?? item.Name;
+               var slash = path.LastIndexOf('/');
+               var category = slash > 0 ? path.Substring(0, slash) : string.Empty;
+
+               entries.Add(new Entry
+               {
+                  Name = item.Name,
+                  Category = category,
+                  Tooltip = item.Tooltip,
+                  Signature = uScript.GetNodeSignature(node),
+                  NameLower = item.Name.ToLowerInvariant(),
+                  PathLower = path.ToLowerInvariant(),
+                  Priority = LinkPriority(link, node)
+               });
             }
-
-            if (link != null && !uScript.Instance.ScriptEditorCtrl.CanAutoLink(link, node))
+         }
+         finally
+         {
+            if (link != null)
             {
-               continue;
+               ctrl.EndAutoLinkChecks();
             }
-
-            var path = item.Path ?? item.Name;
-            var slash = path.LastIndexOf('/');
-            var category = slash > 0 ? path.Substring(0, slash) : string.Empty;
-
-            entries.Add(new Entry
-            {
-               Name = item.Name,
-               Category = category,
-               Tooltip = item.Tooltip,
-               Signature = uScript.GetNodeSignature(node),
-               NameLower = item.Name.ToLowerInvariant(),
-               PathLower = path.ToLowerInvariant(),
-               Priority = LinkPriority(link, node)
-            });
          }
 
          if (entries.Count == 0 && link != null)

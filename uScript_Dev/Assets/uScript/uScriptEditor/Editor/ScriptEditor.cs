@@ -3188,10 +3188,27 @@ namespace Detox.ScriptEditor
          }
       }
 
+      // While checking many possible links at once (Quick Add after dropping a link), the link list is built once
+      private LinkNode [] m_LinkCheckCache = null;
+
+      /// <summary>Speeds up many VerifyLink calls in a row; links must not be added or removed until EndLinkCheckBatch.</summary>
+      public void BeginLinkCheckBatch( )
+      {
+         m_LinkCheckCache = null;
+         m_LinkCheckCache = Links;
+      }
+
+      public void EndLinkCheckBatch( )
+      {
+         m_LinkCheckCache = null;
+      }
+
       public LinkNode [] Links
       {
          get 
          {
+            if ( null != m_LinkCheckCache ) return m_LinkCheckCache;
+
             List<LinkNode> links = new List<LinkNode>( );
             
             foreach( EntityNode node in m_Nodes.Nodes )

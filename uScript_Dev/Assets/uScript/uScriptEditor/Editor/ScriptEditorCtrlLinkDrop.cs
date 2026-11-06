@@ -26,6 +26,9 @@ namespace Detox.ScriptEditor
 
       /// <summary>Type of the dragged socket, or empty for a signal (In/Out) socket.</summary>
       public string Type;
+
+      /// <summary>True when the socket can connect to both signals and values (External Connections).</summary>
+      public bool AnyKind;
    }
 
    public partial class ScriptEditorCtrl
@@ -35,7 +38,14 @@ namespace Detox.ScriptEditor
          public string Name;
          public bool Input;
          public bool Output;
+
+         /// <summary>0 = signal (In/Out), 1 = value, 2 = either (External Connection).</summary>
+         public int Kind;
       }
+
+      private const int SignalSocket = 0;
+      private const int ValueSocket = 1;
+      private const int AnySocket = 2;
 
       private void FlowchartLinkDroppedOnCanvas(Detox.FlowChart.Node node, AnchorPoint anchor)
       {
@@ -60,6 +70,8 @@ namespace Detox.ScriptEditor
             info.Type = parameter.Type;
          }
 
+         info.AnyKind = displayNode.EntityNode is ExternalConnection;
+
          uScript.Instance.OnLinkDroppedOnCanvas(info);
       }
 
@@ -68,65 +80,65 @@ namespace Detox.ScriptEditor
       {
          var list = new List<SocketRef>();
 
-         Action<string, bool, bool> add = (name, input, output) =>
+         Action<string, bool, bool, int> add = (name, input, output, kind) =>
          {
             if (!string.IsNullOrEmpty(name) && (input || output))
             {
-               list.Add(new SocketRef { Name = name, Input = input, Output = output });
+               list.Add(new SocketRef { Name = name, Input = input, Output = output, Kind = kind });
             }
          };
 
          if (node is LogicNode)
          {
             var logic = (LogicNode)node;
-            foreach (var plug in logic.Inputs) add(plug.Name, true, false);
-            foreach (var plug in logic.Outputs) add(plug.Name, false, true);
-            foreach (var plug in logic.Events) add(plug.Name, false, true);
+            foreach (var plug in logic.Inputs) add(plug.Name, true, false, SignalSocket);
+            foreach (var plug in logic.Outputs) add(plug.Name, false, true, SignalSocket);
+            foreach (var plug in logic.Events) add(plug.Name, false, true, SignalSocket);
             foreach (var p in logic.Parameters)
             {
-               if (!p.IsHidden()) add(p.Name, p.Input, p.Output);
+               if (!p.IsHidden()) add(p.Name, p.Input, p.Output, ValueSocket);
             }
          }
          else if (node is EntityMethod)
          {
             var method = (EntityMethod)node;
-            add(method.Input.Name, true, false);
-            add(method.Output.Name, false, true);
-            if (method.Instance.IsVisible() && !method.IsStatic) add(method.Instance.Name, true, false);
+            add(method.Input.Name, true, false, SignalSocket);
+            add(method.Output.Name, false, true, SignalSocket);
+            if (method.Instance.IsVisible() && !method.IsStatic) add(method.Instance.Name, true, false, ValueSocket);
             foreach (var p in method.Parameters)
             {
-               if (!p.IsHidden()) add(p.Name, p.Input, p.Output);
+               if (!p.IsHidden()) add(p.Name, p.Input, p.Output, ValueSocket);
             }
          }
          else if (node is EntityEvent)
          {
             var entityEvent = (EntityEvent)node;
-            foreach (var plug in entityEvent.Outputs) add(plug.Name, false, true);
-            if (entityEvent.Instance.IsVisible() && !entityEvent.IsStatic) add(entityEvent.Instance.Name, true, false);
+            foreach (var plug in entityEvent.Outputs) add(plug.Name, false, true, SignalSocket);
+            if (entityEvent.Instance.IsVisible() && !entityEvent.IsStatic) add(entityEvent.Instance.Name, true, false, ValueSocket);
             foreach (var p in entityEvent.Parameters)
             {
-               if (!p.Input && !p.IsHidden()) add(p.Name, false, p.Output);
+               if (!p.Input && !p.IsHidden()) add(p.Name, false, p.Output, ValueSocket);
             }
          }
          else if (node is EntityProperty)
          {
             var property = (EntityProperty)node;
-            add(property.Parameter.Name, true, true);
-            if (property.Instance.IsVisible() && !property.IsStatic) add(property.Instance.Name, true, false);
+            add(property.Parameter.Name, true, true, ValueSocket);
+            if (property.Instance.IsVisible() && !property.IsStatic) add(property.Instance.Name, true, false, ValueSocket);
          }
          else if (node is LocalNode)
          {
             var local = (LocalNode)node;
-            add(local.Value.Name, local.Value.Input, local.Value.Output);
+            add(local.Value.Name, local.Value.Input, local.Value.Output, ValueSocket);
          }
          else if (node is ExternalConnection)
          {
-            add(((ExternalConnection)node).Connection, true, true);
+            add(((ExternalConnection)node).Connection, true, true, AnySocket);
          }
          else if (node is OwnerConnection)
          {
             var owner = (OwnerConnection)node;
-            add(owner.Connection.Name, owner.Connection.Input, owner.Connection.Output);
+            add(owner.Connection.Name, owner.Connection.Input, owner.Connection.Output, ValueSocket);
          }
 
          return list;
@@ -145,8 +157,16 @@ namespace Detox.ScriptEditor
             return false;
          }
 
+         var dropKind = drop.AnyKind ? AnySocket : (string.IsNullOrEmpty(drop.Type) ? SignalSocket : ValueSocket);
+
          foreach (var socket in GetConnectableSockets(candidate))
          {
+            // Signals only connect to signals and values only to values; skip the rest without the full check
+            if (dropKind != AnySocket && socket.Kind != AnySocket && socket.Kind != dropKind)
+            {
+               continue;
+            }
+
             LinkNode attempt;
 
             // Same direction rules as dragging onto a socket (FlowChartCtrl.OnMouseUp)
@@ -172,6 +192,16 @@ namespace Detox.ScriptEditor
          }
 
          return false;
+      }
+
+      public void BeginAutoLinkChecks()
+      {
+         m_ScriptEditor.BeginLinkCheckBatch();
+      }
+
+      public void EndAutoLinkChecks()
+      {
+         m_ScriptEditor.EndLinkCheckBatch();
       }
 
       /// <summary>True when the node (a toolbox prototype) has a socket that can connect to the dropped socket.</summary>
