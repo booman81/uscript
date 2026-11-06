@@ -333,6 +333,9 @@ namespace Detox.FlowChart
          Controls.Sort(CompareNodes);
       }
 
+      /// <summary>Raised when the user Alt+clicks a socket to remove all of its links.</summary>
+      public event Action<Node, string> SocketDisconnectRequested;
+
       /// <summary>Raised when a link being dragged is released over empty canvas.</summary>
       public event Action<Node, AnchorPoint> LinkDroppedOnCanvas;
 
@@ -1035,6 +1038,22 @@ namespace Detox.FlowChart
          {
             RouteMouseUp( );
             return;
+         }
+
+         // Alt+click on a socket (without dragging, which pans): remove all links of that socket
+         if ( e.Button == MouseButtons.Left && true == Control.ModifierKeys.Contains(Keys.Alt) &&
+              true == UserProbablyDidntMeanToMoveMouse( ) && null != SocketDisconnectRequested )
+         {
+            Node clickedNode = sender as Node;
+            AnchorPoint clickedSocket = new AnchorPoint( );
+
+            if ( null != clickedNode &&
+                 true == clickedNode.PointInAnchorPoint(clickedNode.PointToClient(Detox.Windows.Forms.Cursor.ScaledPosition), ref clickedSocket) &&
+                 false == string.IsNullOrEmpty(clickedSocket.Name) )
+            {
+               SocketDisconnectRequested( clickedNode, clickedSocket.Name );
+               Invalidate( );  // Socket disconnected
+            }
          }
 
          if ( e.Button == MouseButtons.Left && false == Control.ModifierKeys.Contains(Keys.Alt) )

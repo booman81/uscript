@@ -2551,6 +2551,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.LocationChanged   -= FlowchartLocationChanged;
          m_FlowChart.LinkDroppedOnCanvas -= FlowchartLinkDroppedOnCanvas;
          m_FlowChart.LinkRouteChanged -= FlowchartLinkRouteChanged;
+         m_FlowChart.SocketDisconnectRequested -= FlowchartSocketDisconnectRequested;
 
          m_PropertyGrid.PropertyValueChanged -= new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }
@@ -2564,6 +2565,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.LocationChanged   += FlowchartLocationChanged;
          m_FlowChart.LinkDroppedOnCanvas += FlowchartLinkDroppedOnCanvas;
          m_FlowChart.LinkRouteChanged += FlowchartLinkRouteChanged;
+         m_FlowChart.SocketDisconnectRequested += FlowchartSocketDisconnectRequested;
 
          m_PropertyGrid.PropertyValueChanged += new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }

@@ -45,6 +45,35 @@ namespace Detox.ScriptEditor
          OnScriptModified();
       }
 
+      /// <summary>Alt+click on a socket: removes every link of that socket (one undo step).</summary>
+      private void FlowchartSocketDisconnectRequested(Detox.FlowChart.Node node, string anchor)
+      {
+         if (node == null)
+         {
+            return;
+         }
+
+         var guid = node.Guid;
+         var batch = new Patch.Batch("Disconnect Socket");
+
+         foreach (LinkNode link in m_ScriptEditor.Links)
+         {
+            if ((link.Source.Guid == guid && link.Source.Anchor == anchor) ||
+                (link.Destination.Guid == guid && link.Destination.Anchor == anchor))
+            {
+               m_ScriptEditor.RemoveNode(link);
+               batch.Add(new Patch.EntityNode("", link, null));
+            }
+         }
+
+         if (batch.HasPatches)
+         {
+            m_Dirty = true;
+            uScript.Instance.RegisterUndo(batch);
+            PatchDisplay(batch);
+         }
+      }
+
       /// <summary>Removes all reroute points from the selected links.</summary>
       public void StraightenSelectedLinks()
       {
