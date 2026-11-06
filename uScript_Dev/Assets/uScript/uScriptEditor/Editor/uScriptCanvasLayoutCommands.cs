@@ -8,6 +8,7 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 using System;
+using System.Linq;
 
 using Detox.Drawing;
 
@@ -151,5 +152,12 @@ public sealed partial class uScript
 
       menu.AddItem(new GUIContent(prefix + (selected > 0 ? "Frame Selected  (F)" : "Frame All  (F)")), false, this.CommandCanvasFrameSelected);
       menu.AddItem(new GUIContent(prefix + "Frame All  (A)"), false, this.CommandCanvasFrameAll);
+
+      var hasReroutes = m_ScriptEditorCtrl != null
+         && m_ScriptEditorCtrl.FlowChart.SelectedLinks.Any(link => link.RoutePoints != null && link.RoutePoints.Length > 0);
+      if (hasReroutes)
+      {
+         menu.AddItem(new GUIContent(prefix + "Remove Reroute Points from Selected Links"), false, () => m_ScriptEditorCtrl.StraightenSelectedLinks());
+      }
    }
 }

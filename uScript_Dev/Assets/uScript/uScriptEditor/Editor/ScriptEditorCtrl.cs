@@ -933,6 +933,27 @@ namespace Detox.ScriptEditor
                clone.Destination.Guid = (Guid) remappedGuid[ link.Destination.Guid ];
                clone.Guid             = (Guid) remappedGuid[ link.Guid ];
 
+               // Reroute points move with the pasted nodes
+               if ( false == string.IsNullOrEmpty(clone.RoutePoints) )
+               {
+                  EntityNode oldSource = scriptEditor.GetNode( link.Source.Guid );
+                  EntityNode newSource = m_ScriptEditor.GetNode( clone.Source.Guid );
+
+                  if ( null != oldSource && null != newSource )
+                  {
+                     int dx = newSource.Position.X - oldSource.Position.X;
+                     int dy = newSource.Position.Y - oldSource.Position.Y;
+
+                     Point[] routePoints = Detox.FlowChart.LinkRoute.Parse( clone.RoutePoints );
+                     for ( int r = 0; r < routePoints.Length; r++ )
+                     {
+                        routePoints[r] = new Point( routePoints[r].X + dx, routePoints[r].Y + dy );
+                     }
+
+                     clone.RoutePoints = Detox.FlowChart.LinkRoute.Format( routePoints );
+                  }
+               }
+
                Patch.EntityNode patchNode = new Detox.Patch.EntityNode( "", null, clone.Copy(true) );
                batchPatch.Add( patchNode );
 
@@ -1943,6 +1964,7 @@ namespace Detox.ScriptEditor
 
             Detox.FlowChart.Link chartLink = new Detox.FlowChart.Link( );
             chartLink.Tag = link;
+            chartLink.RoutePoints = Detox.FlowChart.LinkRoute.Parse( link.RoutePoints );
 
             chartLink.Source.Node   = m_FlowChart.GetNode( link.Source.Guid );
             chartLink.Source.AnchorName = link.Source.Anchor;
@@ -2102,6 +2124,7 @@ namespace Detox.ScriptEditor
          {
             Detox.FlowChart.Link chartLink = new Detox.FlowChart.Link( );
             chartLink.Tag = link;
+            chartLink.RoutePoints = Detox.FlowChart.LinkRoute.Parse( link.RoutePoints );
 
             chartLink.Source.Node   = m_FlowChart.GetNode( link.Source.Guid );
             chartLink.Source.AnchorName = link.Source.Anchor;
@@ -2527,6 +2550,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.PointRender       -= FlowchartPointRender;
          m_FlowChart.LocationChanged   -= FlowchartLocationChanged;
          m_FlowChart.LinkDroppedOnCanvas -= FlowchartLinkDroppedOnCanvas;
+         m_FlowChart.LinkRouteChanged -= FlowchartLinkRouteChanged;
 
          m_PropertyGrid.PropertyValueChanged -= new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }
@@ -2539,6 +2563,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.PointRender       += FlowchartPointRender;
          m_FlowChart.LocationChanged   += FlowchartLocationChanged;
          m_FlowChart.LinkDroppedOnCanvas += FlowchartLinkDroppedOnCanvas;
+         m_FlowChart.LinkRouteChanged += FlowchartLinkRouteChanged;
 
          m_PropertyGrid.PropertyValueChanged += new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }

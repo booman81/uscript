@@ -544,111 +544,213 @@ namespace Detox.FlowChart
          end  = link.Destination.Node.PointToScreen( end );
          end  = this.PointToClient( end );
          
-         if (true)
+         float toleranceSq = Preferences.LineSelectionTolerance * Preferences.LineSelectionTolerance / Zoom;
+
+         return HitLinkSegment( link, start, end, position, toleranceSq ) >= 0;
+      }
+
+      /// <summary>Which piece of the link (between reroute points) is under <paramref name="position"/>; -1 if none.</summary>
+      private int HitLinkSegment( Link link, Point start, Point end, Point position, float toleranceSq )
+      {
+         PointF[] route = LinkRoute.Path( new PointF(start.X, start.Y), new PointF(end.X, end.Y), link.RoutePoints, Point.Empty );
+
+         for ( int segment = 0; segment < route.Length - 1; segment++ )
          {
-            // Perform bezier accurate test
-            float toleranceSq = Preferences.LineSelectionTolerance * Preferences.LineSelectionTolerance / Zoom;
-
-            //control point 1
-            //is 25% of the X length and only 10% of the Y length
-            PointF control1 = new PointF(
-               (start.X + (end.X - start.X) * .25f),
-               (start.Y + (end.Y - start.Y) * .10f) );
-
-            //control point 2
-            //is 75% of the X length and 90% of the Y length
-            PointF control2 = new PointF(
-               (start.X + (end.X - start.X) * .75f),
-               (start.Y + (end.Y - start.Y) * .90f) );
-
-            
-            Point delta = new Point(end.X - start.X, end.Y - start.Y);
-
-            float magSq;
-
-            float length = (float) Math.Sqrt(delta.X * delta.X + delta.Y * delta.Y);
-
-            for (int i = 0; i < length; i++)
+            if ( true == InBezier(route[segment], route[segment + 1], position, toleranceSq) )
             {
-               float t = i / (float) length;
+               return segment;
+            }
+         }
 
-               float pX = (float)
-                            (Math.Pow(1.0f - t, 3.0f) * start.X + 
-                              3.0f * Math.Pow(1.0f - t, 2.0f) * t * control1.X +
-                              3.0f * (1.0f - t) * (t * t) * control2.X +
-                              Math.Pow(t, 3.0f) * end.X);
-                        
-               float pY = (float)
-                            (Math.Pow(1.0f - t, 3.0f) * start.Y + 
-                              3.0f * Math.Pow(1.0f - t, 2.0f) * t * control1.Y +
-                              3.0f * (1.0f - t) * (t * t) * control2.Y +
-                              Math.Pow(t, 3.0f) * end.Y);
+         return -1;
+      }
 
-            
-               magSq =  (position.X - pX) * (position.X - pX) +
-                        (position.Y - pY) * (position.Y - pY);
+      private int HitLinkSegment( Link link, Point position )
+      {
+         Point start = new Point( (int) (link.Source.Anchor.X / 100.0f * link.Source.Node.Size.Width),
+                                  (int) (link.Source.Anchor.Y / 100.0f * link.Source.Node.Size.Height) );
+         start = this.PointToClient( link.Source.Node.PointToScreen(start) );
 
-               if (magSq <= toleranceSq)
+         Point end = new Point( (int) (link.Destination.Anchor.X / 100.0f * link.Destination.Node.Size.Width),
+                                (int) (link.Destination.Anchor.Y / 100.0f * link.Destination.Node.Size.Height) );
+         end = this.PointToClient( link.Destination.Node.PointToScreen(end) );
+
+         float toleranceSq = Preferences.LineSelectionTolerance * Preferences.LineSelectionTolerance / Zoom;
+         return HitLinkSegment( link, start, end, position, toleranceSq );
+      }
+
+      private static bool InBezier( PointF start, PointF end, Point position, float toleranceSq )
+      {
+         PointF control1, control2;
+         LinkRoute.Controls( start, end, out control1, out control2 );
+
+         float deltaX = end.X - start.X;
+         float deltaY = end.Y - start.Y;
+         float length = (float) Math.Sqrt( deltaX * deltaX + deltaY * deltaY );
+         float magSq;
+
+         for ( int i = 0; i < length; i++ )
+         {
+            float t = i / length;
+
+            float pX = (float)
+                         (Math.Pow(1.0f - t, 3.0f) * start.X +
+                           3.0f * Math.Pow(1.0f - t, 2.0f) * t * control1.X +
+                           3.0f * (1.0f - t) * (t * t) * control2.X +
+                           Math.Pow(t, 3.0f) * end.X);
+
+            float pY = (float)
+                         (Math.Pow(1.0f - t, 3.0f) * start.Y +
+                           3.0f * Math.Pow(1.0f - t, 2.0f) * t * control1.Y +
+                           3.0f * (1.0f - t) * (t * t) * control2.Y +
+                           Math.Pow(t, 3.0f) * end.Y);
+
+            magSq = (position.X - pX) * (position.X - pX) +
+                    (position.Y - pY) * (position.Y - pY);
+
+            if ( magSq <= toleranceSq ) return true;
+         }
+
+         magSq = (position.X - end.X) * (position.X - end.X) +
+                 (position.Y - end.Y) * (position.Y - end.Y);
+
+         return magSq <= toleranceSq;
+      }
+
+      // === Reroute points ========================================================================================
+
+      private Link m_RouteDragLink = null;
+      private int m_RouteDragIndex = -1;
+      private double m_LastCanvasClickTime = 0;
+      private Point m_LastCanvasClickPos = Point.Empty;
+
+      /// <summary>Raised when reroute points of a link were added, moved or removed by the user.</summary>
+      public event Action<Link> LinkRouteChanged;
+
+      private bool FindRoutePoint( Point position, out Link foundLink, out int foundIndex )
+      {
+         float radius = Math.Min( 30.0f, (LinkRoute.HandleSize * 0.5f + 3.0f) / Math.Max(Zoom, 0.1f) );
+
+         for ( int i = m_Links.Count - 1; i >= 0; i-- )
+         {
+            Point[] points = m_Links[i].RoutePoints;
+            if ( null == points ) continue;
+
+            for ( int p = 0; p < points.Length; p++ )
+            {
+               float dx = points[p].X - position.X;
+               float dy = points[p].Y - position.Y;
+
+               if ( dx * dx + dy * dy <= radius * radius )
+               {
+                  foundLink = m_Links[i];
+                  foundIndex = p;
                   return true;
+               }
+            }
+         }
+
+         foundLink = null;
+         foundIndex = -1;
+         return false;
+      }
+
+      /// <summary>
+      /// Mouse down on empty canvas: drag a reroute point, double-click a point to remove it, or double-click a
+      /// link to add one. Returns True when handled.
+      /// </summary>
+      private bool RouteMouseDown( )
+      {
+         Point position = PointToClient( Detox.Windows.Forms.Cursor.ScaledPosition );
+
+         double now = EditorApplication.timeSinceStartup;
+         bool doubleClick = now - m_LastCanvasClickTime < 0.35 &&
+                            Math.Abs(position.X - m_LastCanvasClickPos.X) <= 5 &&
+                            Math.Abs(position.Y - m_LastCanvasClickPos.Y) <= 5;
+
+         m_LastCanvasClickTime = doubleClick ? 0 : now;
+         m_LastCanvasClickPos  = position;
+
+         Link link;
+         int index;
+
+         if ( true == FindRoutePoint(position, out link, out index) )
+         {
+            if ( true == doubleClick )
+            {
+               List<Point> points = new List<Point>( link.RoutePoints );
+               points.RemoveAt( index );
+               link.RoutePoints = points.ToArray( );
+               OnLinkRouteChanged( link );
+            }
+            else
+            {
+               m_RouteDragLink  = link;
+               m_RouteDragIndex = index;
             }
 
-            magSq = (position.X - end.X) * (position.X - end.X) +
-                    (position.Y - end.Y) * (position.Y - end.Y);
-
-            if (magSq <= toleranceSq)
-               return true;
+            Invalidate( );  // Reroute point clicked
+            return true;
          }
-         //else
-         //{         
-         //   //this hit test assumes the arrow is a straight line
-         //   //(in actuality it's slightly curved w/ bezier rendering)
-         //   //but in my tests so far, this is still accurate enough
 
-         //   //put position in link space
-         //   Point local = new Point( position.X - start.X, position.Y - start.Y );
+         if ( true == doubleClick )
+         {
+            for ( int i = m_Links.Count - 1; i >= 0; i-- )
+            {
+               int segment = HitLinkSegment( m_Links[i], position );
+               if ( segment < 0 ) continue;
 
-         //   //projection position on link ray
-         //   Point delta = new Point( end.X - start.X, end.Y - start.Y );
+               List<Point> points = new List<Point>( m_Links[i].RoutePoints ?? new Point[0] );
+               points.Insert( segment, position );
+               m_Links[i].RoutePoints = points.ToArray( );
 
-         //   float magnitude = (float) Math.Sqrt( delta.X * delta.X + delta.Y * delta.Y );
-         //   if ( 0 == magnitude ) return false;
+               // Keep dragging the new point until the mouse is released; that commits it
+               m_RouteDragLink  = m_Links[i];
+               m_RouteDragIndex = segment;
 
-         //   float rayX = delta.X / magnitude;
-         //   float rayY = delta.Y / magnitude;
-
-         //   float distance = rayX * local.X + rayY * local.Y;
-
-         //   //if the point is infront of the start (along the ray)
-         //   //then clamp the line test point to the max distance of our line
-         //   if ( distance > 0 )
-         //   {
-         //      distance = Math.Min( distance, magnitude );
-         //   }
-         //   else
-         //   {
-         //      //the point is behind our start ray, so let our max
-         //      //be the testing amount
-         //      distance = Math.Max( distance, -tolerance );
-         //   }
-
-         //   Point projected = new Point( (int) (start.X + distance * rayX), (int) (start.Y + distance * rayY) );
-
-         //   //delta from position from projected position
-         //   delta = new Point( position.X - projected.X, position.Y - projected.Y );
-
-         //   //check distance
-         //   distance = delta.X * delta.X + delta.Y * delta.Y;
-         //   distance = (float) Math.Sqrt( distance );
-
-         //   if ( distance <= tolerance )
-         //   {
-         //      return true;
-         //   }
-
-         //   return false;
-         //}
+               Invalidate( );  // Reroute point added
+               return true;
+            }
+         }
 
          return false;
+      }
+
+      private void RouteMouseMove( )
+      {
+         Point position = PointToClient( Detox.Windows.Forms.Cursor.ScaledPosition );
+
+         if ( Preferences.GridSnap && Preferences.GridSize > 0 )
+         {
+            int grid = (int) Preferences.GridSize;
+            position = new Point( (int) Math.Round(position.X / (float) grid) * grid, (int) Math.Round(position.Y / (float) grid) * grid );
+         }
+
+         Point[] points = m_RouteDragLink.RoutePoints;
+         if ( m_RouteDragIndex >= 0 && m_RouteDragIndex < points.Length )
+         {
+            points[ m_RouteDragIndex ] = position;
+         }
+
+         Invalidate( );  // Reroute point dragged
+      }
+
+      private void RouteMouseUp( )
+      {
+         Link link = m_RouteDragLink;
+         m_RouteDragLink  = null;
+         m_RouteDragIndex = -1;
+
+         OnLinkRouteChanged( link );
+         Invalidate( );  // Reroute point released
+      }
+
+      private void OnLinkRouteChanged( Link link )
+      {
+         if ( null != link && null != LinkRouteChanged )
+         {
+            LinkRouteChanged( link );
+         }
       }
 
       private void FlowChartCtrl_MouseDown(object sender, MouseEventArgs e)
@@ -663,6 +765,11 @@ namespace Detox.FlowChart
          if ( e.Button == MouseButtons.Left )
          {
             m_MoveBoundariesStart = Detox.Windows.Forms.Cursor.AbsolutePosition;
+
+            if ( false == Control.ModifierKeys.Contains(Keys.Alt) )
+            {
+               RouteMouseDown( );
+            }
          }
       }
 
@@ -826,6 +933,12 @@ namespace Detox.FlowChart
       //the node, which will have the mouse coords in node space
       private void FlowChartCtrl_NodeMouseMove(object sender, MouseEventArgs e)
       {
+         if ( null != m_RouteDragLink )
+         {
+            RouteMouseMove( );
+            return;
+         }
+
          if ( e.Button == MouseButtons.Left && false == Control.ModifierKeys.Contains(Keys.Alt) )
          {
             if ( false == InMoveMode && null == m_StartLinkNode )
@@ -907,6 +1020,12 @@ namespace Detox.FlowChart
       //the node, which will have the mouse coords in node space
       private void FlowChartCtrl_NodeMouseUp(object sender, MouseEventArgs e)
       {
+         if ( null != m_RouteDragLink )
+         {
+            RouteMouseUp( );
+            return;
+         }
+
          if ( e.Button == MouseButtons.Left && false == Control.ModifierKeys.Contains(Keys.Alt) )
          {
             List<Node> modifiedNodes = new List<Node>( );
@@ -1045,6 +1164,13 @@ namespace Detox.FlowChart
 
       private void FlowChartCtrl_MouseUp(object sender, MouseEventArgs e)
       {
+         if ( null != m_RouteDragLink )
+         {
+            RouteMouseUp( );
+            m_StartMarquee = Point.Empty;
+            return;
+         }
+
          if ( e.Button != MouseButtons.Left && e.Button != MouseButtons.Middle ) return;
 
          bool selectionSetModified = false;
@@ -1224,6 +1350,12 @@ namespace Detox.FlowChart
 
       private void FlowChartCtrl_MouseMove(object sender, MouseEventArgs e)
       {
+         if ( null != m_RouteDragLink )
+         {
+            RouteMouseMove( );
+            return;
+         }
+
          if ( true == InMoveMode )
          {
             OnLocationChanged( );
@@ -1545,115 +1677,18 @@ namespace Detox.FlowChart
             end.X += Location.X;
             end.Y += Location.Y;
 
-            //control point 1
-            //is 25% of the X length and only 10% of the Y length
-            PointF control1 = new PointF(
-               (start.X + (end.X - start.X) * .25f),
-               (start.Y + (end.Y - start.Y) * .10f) );
-
-            //control point 2
-            //is 75% of the X length and 90% of the Y length
-            PointF control2 = new PointF(
-               (start.X + (end.X - start.X) * .75f),
-               (start.Y + (end.Y - start.Y) * .90f) );
-
-            // New socket links
-            Handles.color = new UnityEngine.Color( selectedPen.Color.FR, selectedPen.Color.FG, selectedPen.Color.FB );
-            Handles.DrawBezier( new UnityEngine.Vector3(start.X, start.Y, 0), new UnityEngine.Vector3(end.X, end.Y, 0),
-                                new UnityEngine.Vector3(control1.X, control1.Y, 0), new UnityEngine.Vector3(control2.X, control2.Y, 0),
-                                 Handles.color, uScriptConfig.LineTexture, selectedPen.Width );
-            // The end of the new socket link
-            UnityEngine.GUI.Box( new UnityEngine.Rect(end.X - uScriptConfig.PointerLineEnd.width / 2, end.Y - uScriptConfig.PointerLineEnd.height / 2,
-                                 uScriptConfig.PointerLineEnd.width, uScriptConfig.PointerLineEnd.height),
-                                 uScriptConfig.PointerLineEnd);
-         }
-
-         int i;
-         List<Control> visibleList = new List<Control>();
-         Hashtable visibleHash = new Hashtable();
-
-         // pare down list to only visible nodes
-         for (i = 0; i < Controls.Count; i++)
-         {
-            Node node = Controls[i] as Node;
-            
-            if (node.IsVisible(visibleRect) || Detox.Editor.ExportPNG.IsExporting)
-            {
-               visibleList.Add(node);
-               visibleHash[ node.Guid ] = node;
-            }
-         }
-
-         // render pre-link nodes
-         for (i = 0; i < visibleList.Count; i++)
-         {
-            Node node = visibleList[i] as Node;
-            if (node != null)
-            {
-               if (node.RenderDepth >= LinkRenderDepth)
-               {
-                  break;
-               }
-
-               node.OnPaint(e);
-            }
-         }
-
-         // render links
-         foreach (Link link in m_Links)
-         {
-            //ignore links which don't have visible nodes
-            //drawing these lines taxes performance
-            if ( false == visibleHash.Contains(link.Source.Node.Guid) &&
-                 false == visibleHash.Contains(link.Destination.Node.Guid) )
-            {
-               continue;
-            }
-
-            //PointF start = new PointF( link.Source.Anchor.X / 100.0f * link.Source.Node.ZoomSize.Width,
-            //                           link.Source.Anchor.Y / 100.0f * link.Source.Node.ZoomSize.Height );
-            PointF start = new PointF( link.Source.Anchor.X / 100.0f * link.Source.Node.Size.Width,
-                                       link.Source.Anchor.Y / 100.0f * link.Source.Node.Size.Height );
-
-            start  = link.Source.Node.PointToScreen( start );
-            start  = PointToClient( start );
-
-            start.X += Location.X;
-            start.Y += Location.Y;
-
-            //PointF end = new PointF( link.Destination.Anchor.X / 100.0f * link.Destination.Node.ZoomSize.Width,
-            //                         link.Destination.Anchor.Y / 100.0f * link.Destination.Node.ZoomSize.Height );
-            PointF end = new PointF( link.Destination.Anchor.X / 100.0f * link.Destination.Node.Size.Width,
-                                     link.Destination.Anchor.Y / 100.0f * link.Destination.Node.Size.Height );
-
-            end  = link.Destination.Node.PointToScreen( end );
-            end  = PointToClient( end );
-
-            end.X += Location.X;
-            end.Y += Location.Y;
-
-            //control point 1
-            //is 25% of the X length and only 10% of the Y length
-            PointF control1 = new PointF(
-               (start.X + (end.X - start.X) * .25f),
-               (start.Y + (end.Y - start.Y) * .10f) );
-
-            //control point 2
-            //is 75% of the X length and 90% of the Y length
-            PointF control2 = new PointF(
-               (start.X + (end.X - start.X) * .75f),
-               (start.Y + (end.Y - start.Y) * .90f) );
+            // Line color and width
+            UnityEngine.Color lineColor;
 
             if ( true == link.Selected )
             {
-               Handles.color = new UnityEngine.Color( selectedPen.Color.FR, selectedPen.Color.FG, selectedPen.Color.FB );
-               Handles.DrawBezier( new UnityEngine.Vector3(start.X, start.Y, 0), new UnityEngine.Vector3(end.X, end.Y, 0),
-                                   new UnityEngine.Vector3(control1.X, control1.Y, 0), new UnityEngine.Vector3(control2.X, control2.Y, 0),
-                                    Handles.color, uScriptConfig.LineTexture, selectedPen.Width );
+               lineColor = new UnityEngine.Color( selectedPen.Color.FR, selectedPen.Color.FG, selectedPen.Color.FB );
+               lineWidth = selectedPen.Width;
             }
             else
             {
                lineWidth = -1;
+               lineColor = UnityEngine.Color.white;
 
                // check source node type first
                string styleName = link.Source.Node.UnselectedStyleName;
@@ -1670,7 +1705,7 @@ namespace Detox.FlowChart
                {
                   int index = (int) value;
 
-                  Handles.color = uScriptConfig.LineColors[index];
+                  lineColor = uScriptConfig.LineColors[index];
                   lineWidth = uScriptConfig.LineWidths[index] * Preferences.LineWidthMultiplier / Mathf.Max(Zoom, 0.25f);
                }
                else
@@ -1682,7 +1717,7 @@ namespace Detox.FlowChart
 
                   if ( true == oneNodeIsVariable )
                   {
-                     Handles.color = uScriptConfig.LineColors[0];
+                     lineColor = uScriptConfig.LineColors[0];
                      lineWidth = uScriptConfig.LineWidths[0] * Preferences.LineWidthMultiplier / Mathf.Max(Zoom, 0.25f);
                   }
                }
@@ -1690,12 +1725,35 @@ namespace Detox.FlowChart
                if ( -1 == lineWidth )
                {
                   lineWidth = pen.Width;
-                  Handles.color = new UnityEngine.Color(pen.Color.FR, pen.Color.FG, pen.Color.FB);
+                  lineColor = new UnityEngine.Color(pen.Color.FR, pen.Color.FG, pen.Color.FB);
                }
+            }
 
-               Handles.DrawBezier( new UnityEngine.Vector3(start.X, start.Y, 0), new UnityEngine.Vector3(end.X, end.Y, 0),
+            Handles.color = lineColor;
+
+            // A link with reroute points is drawn as one curve per piece, through each point
+            PointF[] route = LinkRoute.Path( start, end, link.RoutePoints, Location );
+
+            for ( int segment = 0; segment < route.Length - 1; segment++ )
+            {
+               PointF segStart = route[ segment ];
+               PointF segEnd   = route[ segment + 1 ];
+               PointF control1, control2;
+               LinkRoute.Controls( segStart, segEnd, out control1, out control2 );
+
+               Handles.DrawBezier( new UnityEngine.Vector3(segStart.X, segStart.Y, 0), new UnityEngine.Vector3(segEnd.X, segEnd.Y, 0),
                                    new UnityEngine.Vector3(control1.X, control1.Y, 0), new UnityEngine.Vector3(control2.X, control2.Y, 0),
-                                   Handles.color, uScriptConfig.LineTexture, lineWidth );
+                                   lineColor, uScriptConfig.LineTexture, lineWidth );
+            }
+
+            // Reroute point handles
+            for ( int routeIndex = 1; routeIndex < route.Length - 1; routeIndex++ )
+            {
+               float size = LinkRoute.HandleSize;
+               var handleRect = new UnityEngine.Rect( route[routeIndex].X - size * 0.5f, route[routeIndex].Y - size * 0.5f, size, size );
+               var handleColor = (m_RouteDragLink == link && m_RouteDragIndex == routeIndex - 1) ? UnityEngine.Color.white : lineColor;
+               handleColor.a = 1.0f;
+               GUI.DrawTexture( handleRect, UnityEngine.Texture2D.whiteTexture, UnityEngine.ScaleMode.StretchToFill, true, 0, handleColor, 0, size * 0.5f );
             }
          }
 
@@ -1753,6 +1811,13 @@ namespace Detox.FlowChart
                  existing.Source.AnchorName      == link.Source.AnchorName &&
                  existing.Destination.AnchorName == link.Destination.AnchorName )
             {
+               // Same link displayed again (e.g. its reroute points changed): keep the newest data
+               if ( null != link.Tag )
+               {
+                  existing.Tag = link.Tag;
+                  existing.RoutePoints = link.RoutePoints ?? new Point[ 0 ];
+               }
+
                return;
             }
          }
@@ -1862,6 +1927,72 @@ namespace Detox.FlowChart
 
    }
 
+   /// <summary>Reroute points of links: storage format and curve shape.</summary>
+   public static class LinkRoute
+   {
+      public const float HandleSize = 8.0f;
+
+      public static Point[] Parse( string text )
+      {
+         List<Point> points = new List<Point>( );
+         if ( string.IsNullOrEmpty(text) ) return points.ToArray( );
+
+         foreach ( string pair in text.Split(';') )
+         {
+            string[] xy = pair.Split(',');
+            int x, y;
+            if ( xy.Length == 2 &&
+                 int.TryParse(xy[0], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out x) &&
+                 int.TryParse(xy[1], System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out y) )
+            {
+               points.Add( new Point(x, y) );
+            }
+         }
+
+         return points.ToArray( );
+      }
+
+      public static string Format( Point[] points )
+      {
+         if ( null == points || points.Length == 0 ) return null;
+
+         return string.Join( ";", points.Select(p => p.X.ToString(System.Globalization.CultureInfo.InvariantCulture) + "," +
+                                                     p.Y.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToArray() );
+      }
+
+      /// <summary>Start, the reroute points (moved by <paramref name="offset"/>) and end.</summary>
+      public static PointF[] Path( PointF start, PointF end, Point[] points, Point offset )
+      {
+         int count = null == points ? 0 : points.Length;
+         PointF[] path = new PointF[ count + 2 ];
+
+         path[ 0 ] = start;
+         for ( int i = 0; i < count; i++ )
+         {
+            path[ i + 1 ] = new PointF( points[i].X + offset.X, points[i].Y + offset.Y );
+         }
+         path[ count + 1 ] = end;
+
+         return path;
+      }
+
+      /// <summary>Bezier control points uScript uses for links (unchanged for links without reroute points).</summary>
+      public static void Controls( PointF start, PointF end, out PointF control1, out PointF control2 )
+      {
+         //control point 1
+         //is 25% of the X length and only 10% of the Y length
+         control1 = new PointF(
+            (start.X + (end.X - start.X) * .25f),
+            (start.Y + (end.Y - start.Y) * .10f) );
+
+         //control point 2
+         //is 75% of the X length and 90% of the Y length
+         control2 = new PointF(
+            (start.X + (end.X - start.X) * .75f),
+            (start.Y + (end.Y - start.Y) * .90f) );
+      }
+   }
+
    public class Link
    {
       public class Connection
@@ -1877,6 +2008,9 @@ namespace Detox.FlowChart
       public object     Tag;
       public Guid       Guid = Guid.NewGuid( );
       public bool       Selected = false;
+
+      /// <summary>Reroute points in graph coordinates (empty for a direct link).</summary>
+      public Point[]    RoutePoints = new Point[ 0 ];
 
       public Link()
       {

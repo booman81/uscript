@@ -271,6 +271,9 @@ namespace Detox.Data.ScriptEditor
       public Connection Source;
       public Connection Destination;
 
+      /// <summary>Reroute points of the link in graph coordinates ("x,y;x,y"), empty for a direct link.</summary>
+      public string RoutePoints;
+
       public override void Clone(EntityNodeData cloneFrom)
       {
          base.Clone( cloneFrom );
@@ -280,6 +283,7 @@ namespace Detox.Data.ScriptEditor
 
          Source      = linkData.Source;
          Destination = linkData.Destination;
+         RoutePoints = linkData.RoutePoints;
       }
 
       public new int Version { get { return 1; } }
@@ -292,6 +296,9 @@ namespace Detox.Data.ScriptEditor
          Source.Anchor = (string) serializer.LoadNamedObject( "SourceAnchor" );
          Destination.Guid = (Guid) serializer.LoadNamedObject( "DestinationGuid" );
          Destination.Anchor = (string) serializer.LoadNamedObject( "DestinationAnchor" );
+
+         // Added in uScript for Unity 6; older graphs simply don't have it
+         RoutePoints = serializer.LoadNamedObject( "RoutePoints" ) as string;
       }
 
       public new void Save(ObjectSerializer serializer)
@@ -302,6 +309,11 @@ namespace Detox.Data.ScriptEditor
          serializer.SaveNamedObject( "SourceAnchor", Source.Anchor );
          serializer.SaveNamedObject( "DestinationGuid", Destination.Guid );
          serializer.SaveNamedObject( "DestinationAnchor", Destination.Anchor );
+
+         if ( false == string.IsNullOrEmpty(RoutePoints) )
+         {
+            serializer.SaveNamedObject( "RoutePoints", RoutePoints );
+         }
       }
    }
 

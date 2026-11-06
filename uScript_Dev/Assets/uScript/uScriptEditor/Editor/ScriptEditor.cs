@@ -1430,6 +1430,8 @@ namespace Detox.ScriptEditor
 
          if ( Guid != node.Guid ) return false;
 
+         if ( (RoutePoints ?? "") != (node.RoutePoints ?? "") ) return false;
+
          return true;
       }
 
@@ -1443,6 +1445,7 @@ namespace Detox.ScriptEditor
          LinkNode linkNode   = new LinkNode( );
          linkNode.Source     = Source;
          linkNode.Destination= Destination;
+         linkNode.RoutePoints= RoutePoints;
          linkNode.Guid       = preserveGuid ? Guid : Guid.NewGuid( );
 
          return linkNode;
@@ -1458,6 +1461,7 @@ namespace Detox.ScriptEditor
             nodeData.Source.Anchor = Source.Anchor;
             nodeData.Destination.Guid   = Destination.Guid;
             nodeData.Destination.Anchor = Destination.Anchor;
+            nodeData.RoutePoints = RoutePoints;
 
             return nodeData;
          }
@@ -1486,6 +1490,9 @@ namespace Detox.ScriptEditor
       public Connection Source;
       public Connection Destination;
 
+      /// <summary>Reroute points in graph coordinates ("x,y;x,y"); null or empty for a direct link.</summary>
+      public string RoutePoints;
+
       public Point Position { get { throw new Exception("Link has no position"); } set { throw new Exception("Link has no position"); } }
 
       public string TypeName
@@ -1499,6 +1506,7 @@ namespace Detox.ScriptEditor
       public LinkNode(Guid source, string sourceAnchor, Guid dest, string destAnchor )
       {
          m_Guid = Guid.NewGuid( );
+         RoutePoints = null;
  
          Source.Guid   = source;
          Source.Anchor = sourceAnchor;
@@ -1514,6 +1522,7 @@ namespace Detox.ScriptEditor
          Source.Anchor = data.Source.Anchor;
          Destination.Guid   = data.Destination.Guid;
          Destination.Anchor = data.Destination.Anchor;
+         RoutePoints = data.RoutePoints;
       }
    }
 
@@ -3649,8 +3658,11 @@ namespace Detox.ScriptEditor
          }
 
          //fail if a link already exists
+         //(the same link, by guid, is being updated - e.g. its reroute points - and doesn't count)
          foreach ( LinkNode existingLink in Links )
          {
+            if ( existingLink.Guid == link.Guid ) continue;
+
             if ( existingLink.Source.Guid        == link.Source.Guid &&
                  existingLink.Source.Anchor      == link.Source.Anchor &&
                  existingLink.Destination.Guid   == link.Destination.Guid &&
@@ -3668,6 +3680,8 @@ namespace Detox.ScriptEditor
          //then see if the dest can handle multiple inputs
          foreach ( LinkNode existingLink in Links )
          {
+            if ( existingLink.Guid == link.Guid ) continue;
+
             if ( existingLink.Destination.Guid   == link.Destination.Guid &&
                  existingLink.Destination.Anchor == link.Destination.Anchor ) 
             {
@@ -3691,6 +3705,8 @@ namespace Detox.ScriptEditor
          //for example a string might go into an object in/out
          foreach ( LinkNode existingLink in Links )
          {
+            if ( existingLink.Guid == link.Guid ) continue;
+
             if ( existingLink.Source.Guid        == link.Destination.Guid &&
                  existingLink.Source.Anchor      == link.Destination.Anchor &&
                  existingLink.Destination.Guid   == link.Source.Guid &&
@@ -4125,6 +4141,8 @@ namespace Detox.ScriptEditor
                //only one is allowed because properties can return information
                foreach ( LinkNode existingLink in Links )
                {
+                  if ( existingLink.Guid == link.Guid ) continue;
+
                   if ( existingLink.Destination.Guid   == link.Destination.Guid &&
                        existingLink.Destination.Anchor == link.Destination.Anchor ) 
                   {
@@ -4158,6 +4176,8 @@ namespace Detox.ScriptEditor
                   //fail if something is already linked to our instance socket
                   foreach ( LinkNode existingLink in Links )
                   {
+                     if ( existingLink.Guid == link.Guid ) continue;
+
                      if ( existingLink.Destination.Guid   == link.Destination.Guid &&
                           existingLink.Destination.Anchor == link.Destination.Anchor ) 
                      {
