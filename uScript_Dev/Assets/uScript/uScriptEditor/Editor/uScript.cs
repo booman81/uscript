@@ -922,6 +922,11 @@ public sealed partial class uScript : EditorWindow
 
       this.complexData = new ComplexData();
 
+      // Scripts were recompiled, so rebuild the node and component lists. Unity keeps the cached
+      // type name lists across the reload, which hid new nodes until the window was reopened.
+      this.ClearLogicTypes();
+      this.ClearEntityTypes();
+
       OpenFromCache();
 
       ReattachAllUScriptGUIPanelWindows();
@@ -5458,20 +5463,49 @@ public sealed partial class uScript : EditorWindow
       return obj == null ? -1 : uScriptCompat.GetObjectID(obj);
    }
    
+   // Type lookups are cached for the lifetime of the AppDomain. Types can only be added by a script
+   // recompile, which reloads the AppDomain and so clears this cache.
+   private static readonly Dictionary<string, Type> TypeLookupCache = new Dictionary<string, Type>();
+
    public static Type GetAssemblyQualifiedType(String typeName)
    {
       if (null == typeName) return null;
 
-      // try the basic version first
-      if (Type.GetType(typeName) != null) return Type.GetType(typeName);
-
-      // not found, look through all the assemblies
-      foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+      lock (TypeLookupCache)
       {
-         if (Type.GetType(typeName + ", " + assembly.ToString()) != null) return Type.GetType(typeName + ", " + assembly.ToString());
-      }
+         Type type;
+         if (TypeLookupCache.TryGetValue(typeName, out type))
+         {
+            return type;
+         }
 
-      return null;
+         // try the basic version first
+         type = Type.GetType(typeName);
+
+         // not found, look through all the assemblies
+         if (type == null)
+         {
+            foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+               try
+               {
+                  type = assembly.GetType(typeName);
+               }
+               catch (Exception)
+               {
+                  type = null;
+               }
+
+               if (type != null)
+               {
+                  break;
+               }
+            }
+         }
+
+         TypeLookupCache[typeName] = type;
+         return type;
+      }
    }
 
    // This method can be expensive, so call it sparingly
