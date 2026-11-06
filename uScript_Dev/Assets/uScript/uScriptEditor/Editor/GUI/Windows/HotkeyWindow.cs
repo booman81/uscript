@@ -511,6 +511,7 @@ namespace Detox.Editor.GUI.Windows
             this.DrawCommand("Zoom In by 10%", "[Equals]", "Scroll [Wheel] up");
             this.DrawCommand("Frame selected nodes (all if none)", "[F]");
             this.DrawCommand("Frame all nodes", "[A]");
+            this.DrawCommand("Show / hide the minimap", "[M]");
 
             EditorGUILayout.Space();
 

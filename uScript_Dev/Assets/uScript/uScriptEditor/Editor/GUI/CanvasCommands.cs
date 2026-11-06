@@ -45,6 +45,7 @@ namespace Detox.Editor.GUI
          Add(Keys.None, KeyCode.Space, Command.QuickAddNode);
          Add(Keys.None, KeyCode.F, Command.FrameSelected);
          Add(Keys.None, KeyCode.A, Command.FrameAll);
+         Add(Keys.None, KeyCode.M, Command.ToggleMinimap);
 
          Add(Keys.Control, KeyCode.F, Command.OpenFileMenu);
          Add(Keys.Control, KeyCode.G, Command.ToggleGrid);
@@ -320,6 +321,11 @@ namespace Detox.Editor.GUI
          public static void FrameAll()
          {
             uScript.Instance.CommandCanvasFrameAll();
+         }
+
+         public static void ToggleMinimap()
+         {
+            uScript.Instance.CommandToggleMinimap();
          }
 
          public static void PlaceOnCanvasFavorite1()

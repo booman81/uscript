@@ -1760,7 +1760,7 @@ public sealed partial class uScript : EditorWindow
       {
          this.OnGUIHandleContextMenuInput();
       }
-      else
+      else if (!this.HandleMinimapInput())
       {
          this.OnGUIHandleCanvasInput();
       }
@@ -3197,6 +3197,9 @@ public sealed partial class uScript : EditorWindow
             }
             EditorGUILayout.EndScrollView();
 
+            // Overview of the whole graph in the bottom-right corner
+            this.DrawMinimap();
+
             GUI.SetNextControlName(string.Empty);
          }
          GUILayout.EndVertical();
@@ -3270,6 +3273,7 @@ public sealed partial class uScript : EditorWindow
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.ViewMenuItemGrid, Preferences.ShowGrid, CommandViewMenuGrid);
       menu.AddItem(uScriptGUIContent.ViewMenuItemSnap, Preferences.GridSnap, CommandViewMenuSnap);
+      menu.AddItem(new GUIContent("Minimap  (M)"), ShowMinimap, this.CommandToggleMinimap);
       menu.AddDisabledItem(uScriptGUIContent.ViewMenuItemSnapSelected);
       menu.AddSeparator(string.Empty);
 
