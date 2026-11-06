@@ -74,6 +74,43 @@ namespace Detox.ScriptEditor
          }
       }
 
+      /// <summary>Alt+click on a link: deletes it (one undo step).</summary>
+      private void FlowchartLinkDeleteRequested(Link chartLink)
+      {
+         if (chartLink == null || !(chartLink.Tag is LinkNode))
+         {
+            return;
+         }
+
+         LinkNode link = (LinkNode)chartLink.Tag;
+         if (null == m_ScriptEditor.GetNode(link.Guid))
+         {
+            return;
+         }
+
+         m_ScriptEditor.RemoveNode(link);
+
+         var batch = new Patch.Batch("Delete Link");
+         batch.Add(new Patch.EntityNode("", link, null));
+
+         m_Dirty = true;
+         uScript.Instance.RegisterUndo(batch);
+         PatchDisplay(batch);
+      }
+
+      /// <summary>Alt+click on a node: deletes it and its links (one undo step), like Delete does.</summary>
+      private void FlowchartNodeDeleteRequested(Detox.FlowChart.Node node)
+      {
+         if (node == null)
+         {
+            return;
+         }
+
+         m_FlowChart.DeselectAll();
+         m_FlowChart.SelectNodes(new[] { node.Guid });
+         DeleteSelectedNodes();
+      }
+
       /// <summary>Removes all reroute points from the selected links.</summary>
       public void StraightenSelectedLinks()
       {
