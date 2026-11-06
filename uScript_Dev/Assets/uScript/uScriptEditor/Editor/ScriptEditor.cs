@@ -5187,10 +5187,35 @@ namespace Detox.ScriptEditor
          return script;
       }
 
+      /// <summary>Files written by SaveTextFile since the last asset refresh (full paths).</summary>
+      public static readonly List<string> ChangedFiles = new List<string>( );
+
+      private static bool FileHasSameText( string path, string fileContents )
+      {
+         try
+         {
+            if ( false == File.Exists(path) ) return false;
+            if ( new FileInfo(path).Length != System.Text.Encoding.UTF8.GetByteCount(fileContents) &&
+                 new FileInfo(path).Length != System.Text.Encoding.UTF8.GetByteCount(fileContents) + 3 ) return false;   // + UTF-8 BOM
+
+            return File.ReadAllText( path ) == fileContents;
+         }
+         catch ( Exception )
+         {
+            return false;
+         }
+      }
+
       private bool SaveTextFile(string path, string fileContents)
       {
          StreamWriter streamWriter = null;
          bool inVC = false;
+
+         // Unchanged file (e.g. only nodes were moved): leave it alone, so Unity has nothing to recompile
+         if ( true == FileHasSameText(path, fileContents) )
+         {
+            return true;
+         }
 
          try
          {
@@ -5199,6 +5224,11 @@ namespace Detox.ScriptEditor
             streamWriter = File.CreateText(path);
             streamWriter.Write(fileContents);
             streamWriter.Close();
+
+            lock ( ChangedFiles )
+            {
+               ChangedFiles.Add( path );
+            }
 
             if (!inVC)
             {

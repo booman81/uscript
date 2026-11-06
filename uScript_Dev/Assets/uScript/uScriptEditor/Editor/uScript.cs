@@ -2749,7 +2749,25 @@ public sealed partial class uScript : EditorWindow
       var logicPath = GetNestedScriptPath(fullPath);
       var wrapperPath = GetGeneratedScriptPath(fullPath);
 
-      AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+      // Import only the files uScript actually changed. Previously every save forced a full refresh, so Unity
+      // recompiled even when the generated code was identical (for example when only nodes were moved).
+      string[] changedFiles;
+      lock (ScriptEditor.ChangedFiles)
+      {
+         changedFiles = ScriptEditor.ChangedFiles.Distinct().ToArray();
+         ScriptEditor.ChangedFiles.Clear();
+      }
+
+      foreach (var changedFile in changedFiles)
+      {
+         var assetPath = changedFile.RelativeAssetPath();
+         if (!string.IsNullOrEmpty(assetPath) && assetPath.StartsWith("Assets", StringComparison.OrdinalIgnoreCase))
+         {
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+         }
+      }
+
+      AssetDatabase.Refresh();
 
       if (quick)
       {
