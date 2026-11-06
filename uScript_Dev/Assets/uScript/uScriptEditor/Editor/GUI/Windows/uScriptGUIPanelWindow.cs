@@ -60,6 +60,7 @@ namespace Detox.Editor.GUI.Windows
             {
                case "uScriptGUIPanelContent":
                case "uScriptGUIPanelToolbox":
+               case "uScriptGUIPanelVariables":
                   if (uScriptInstance != null) uScriptInstance.PaletteVisible = true;
                   validPanel = true;
                   break;

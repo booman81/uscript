@@ -69,5 +69,12 @@ scripts no longer recompiles uScript.
   - Events > Input Events > Input System Events: fires On Action Pressed / Released.
   Action names can be "Jump" or "Player/Jump" and work with Unity 6 project-wide actions
   and Player Input components.
+* Variables tab (next to Toolbox / Contents, or Alt+V): one row per variable of the open
+  graph with its type, value, Exposed marker and number of nodes. Click to select and jump
+  to its nodes (click again for the next one), double-click or right-click to rename,
+  edit the value and Exposed/Hidden settings, + to create a variable, drag a variable onto
+  the canvas to place another node of it. Warns when two variables share a name but not a type.
+* Rename / Delete Graph from the graph list or File menu (other graphs that use a renamed
+  graph are updated).
 * Removed: the update check, license/promotion/welcome windows and other features that
   depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.

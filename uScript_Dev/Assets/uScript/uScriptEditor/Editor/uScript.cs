@@ -113,6 +113,11 @@ public sealed partial class uScript : EditorWindow
                window.Panel = uScriptGUIPanelToolbox.Instance;
                uScript.Instance.PaletteVisible = false;
             }
+            else if (window.titleContent.text == uScriptGUIPanelVariables.Instance.Name)
+            {
+               window.Panel = uScriptGUIPanelVariables.Instance;
+               uScript.Instance.PaletteVisible = false;
+            }
             else if (window.titleContent.text == uScriptGUIPanelReference.Instance.Name)
             {
                window.Panel = uScriptGUIPanelReference.Instance;
@@ -2620,14 +2625,7 @@ public sealed partial class uScript : EditorWindow
 
    private void DrawGUIPalette()
    {
-      if (_paletteMode == 0)
-      {
-         uScriptGUIPanelToolbox.Instance.Draw();
-      }
-      else
-      {
-         uScriptGUIPanelContent.Instance.Draw();
-      }
+      GetPalettePanel(_paletteMode).Draw();
 
       this.SetMouseRegion(MouseRegion.Palette); //, 1, 1, -4, -4 );
    }
@@ -3310,6 +3308,10 @@ public sealed partial class uScript : EditorWindow
       {
          uScriptGUIPanelToolbox.Instance.FocusSearchBox = true;
       }
+      else if (_paletteMode == uScriptGUIPanelVariables.PaletteMode)
+      {
+         uScriptGUIPanelVariables.Instance.FocusSearchBox = true;
+      }
       else                   // in contents
       {
          uScriptGUIPanelContent.Instance.FocusSearchBox = true;
@@ -3321,23 +3323,34 @@ public sealed partial class uScript : EditorWindow
       }
    }
 
+   /// <summary>The panel shown for a palette mode: 0 = Toolbox, 1 = Contents, 2 = Variables.</summary>
+   public static uScriptGUIPanel GetPalettePanel(int mode)
+   {
+      switch (mode)
+      {
+         case 0:
+            return uScriptGUIPanelToolbox.Instance;
+         case uScriptGUIPanelVariables.PaletteMode:
+            return uScriptGUIPanelVariables.Instance;
+         default:
+            return uScriptGUIPanelContent.Instance;
+      }
+   }
+
    public static void SetPaletteMode(int index)
    {
-      uScriptGUIPanelWindow window = null;
-      uScriptGUIPanel currentPanel = null;
-      uScriptGUIPanel newPanel = null;
+      uScriptGUIPanel currentPanel = GetPalettePanel(_paletteMode);
+      uScriptGUIPanel newPanel = GetPalettePanel(index);
 
-      if (_paletteMode == 0) // in toolbox
+      // Find the pop-out window (if any) that currently shows the palette
+      uScriptGUIPanelWindow window = null;
+      foreach (var panelWindow in Resources.FindObjectsOfTypeAll<uScriptGUIPanelWindow>())
       {
-         currentPanel = uScriptGUIPanelToolbox.Instance;
-         window = GetUScriptGUIPanelWindow<uScriptGUIPanelToolbox>();
-         newPanel = uScriptGUIPanelContent.Instance;
-      }
-      else                   // in contents
-      {
-         currentPanel = uScriptGUIPanelContent.Instance;
-         window = GetUScriptGUIPanelWindow<uScriptGUIPanelContent>();
-         newPanel = uScriptGUIPanelToolbox.Instance;
+         if (panelWindow != null && panelWindow.Panel == currentPanel)
+         {
+            window = panelWindow;
+            break;
+         }
       }
 
       if (!currentPanel.InUScriptPanel)
@@ -5126,6 +5139,26 @@ public sealed partial class uScript : EditorWindow
 
    private void CheckDragDropCanvas()
    {
+      // A variable dragged from the Variables panel
+      var variableDrag = DragAndDrop.GetGenericData(uScriptGUIPanelVariables.DragDataKey);
+      if (variableDrag != null)
+      {
+         DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+
+         if (Event.current.type == EventType.DragPerform)
+         {
+            DragAndDrop.AcceptDrag();
+            DragAndDrop.SetGenericData(uScriptGUIPanelVariables.DragDataKey, null);
+
+            var canvasPosition = new Point(
+               (int)((Event.current.mousePosition.x - this._canvasRect.x) / this.MapScale),
+               (int)((Event.current.mousePosition.y - this._canvasRect.y) / this.MapScale));
+            uScriptGUIPanelVariables.DropVariableOnCanvas(variableDrag, canvasPosition);
+         }
+
+         return;
+      }
+
       foreach (object o in DragAndDrop.objectReferences)
       {
          if (false == (o is UnityEngine.Object)) continue;

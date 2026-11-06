@@ -64,6 +64,7 @@ namespace Detox.Editor.GUI
          Add(Keys.Alt, KeyCode.S, Command.SaveGraph);
          Add(Keys.Alt, KeyCode.T, Command.ShowToolbox);
          Add(Keys.Alt, KeyCode.C, Command.ShowContents);
+         Add(Keys.Alt, KeyCode.V, Command.ShowVariables);
          Add(Keys.Alt, KeyCode.M, Command.SearchPalette);
 
          Add(Keys.Shift, KeyCode.Period, Command.ExpandSelectedNodes);
@@ -448,6 +449,11 @@ namespace Detox.Editor.GUI
          public static void ShowContents()
          {
             uScript.SetPaletteMode(1);
+         }
+
+         public static void ShowVariables()
+         {
+            uScript.SetPaletteMode(uScriptGUIPanelVariables.PaletteMode);
          }
 
          public static void SearchPalette()

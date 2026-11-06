@@ -552,17 +552,7 @@ public sealed class uScriptGUIPanelContent : uScriptGUIPanel
          // Unlike standard panels, this panel shares the same area as the
          // Graph Contents panel.  For now, use a DropDown control instead
          // of the typical Label for the panel title.
-         var options = new[] { "Toolbox", "Contents" };
-         var size = uScriptGUIStyle.PanelTitleDropDown.CalcSize(new GUIContent(options[1]));
-         var index = EditorGUILayout.Popup(
-            uScript._paletteMode,
-            options,
-            uScriptGUIStyle.PanelTitleDropDown,
-            GUILayout.Width(size.x));
-         if (uScript._paletteMode != index)
-         {
-            uScript.SetPaletteMode(index);
-         }
+         uScriptGUIPanelVariables.DrawPaletteModePopup();
 
          //if (uScript.IsDevelopmentBuild)
          //{
