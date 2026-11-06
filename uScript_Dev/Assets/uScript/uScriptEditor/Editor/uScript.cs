@@ -898,6 +898,8 @@ public sealed partial class uScript : EditorWindow
       //clear any old script undo data laying around
       ClearChangeStack();
 
+      this.RestoreGraphTabs();
+
       if (this.fullPath != string.Empty)
       {
          if (this.OpenGraph(this.fullPath, true) == false)
@@ -2428,6 +2430,15 @@ public sealed partial class uScript : EditorWindow
          {
             EditorUtility.DisplayDialog("uScript Not Saved!", "uScript has detected that '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' was quick saved but the code has not been generated! You will not see any changes until you save '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' in the uScript Editor.", "OK");
          }
+
+         if (EditorApplication.isPlayingOrWillChangePlaymode)
+         {
+            var unsavedTabs = this.UnsavedBackgroundTabs(this.graphTabs.Select(tab => GraphTabName(tab)));
+            if (unsavedTabs.Count > 0)
+            {
+               EditorUtility.DisplayDialog("uScript Not Saved!", "These graphs in other uScript tabs have unsaved changes, you will not see them until you save them:\n\n" + string.Join("\n", unsavedTabs.ToArray()), "OK");
+            }
+         }
       }
    }
 
@@ -2438,6 +2449,7 @@ public sealed partial class uScript : EditorWindow
       //undoObject = null;
 
       this.WasCurrentGraphSaved(false);
+      this.SaveBackgroundTabsOnClose();
 
       if (m_ScriptEditorCtrl != null)
       {
@@ -2921,7 +2933,9 @@ public sealed partial class uScript : EditorWindow
    public static void FileMenuItem_New()
    {
       var script = Instance;
-      if (script.WasCurrentGraphSaved(true))
+
+      // With tabs, the open graph stays in its tab and the new graph gets a new tab
+      if (script.StashCurrentGraphIntoTab() || script.WasCurrentGraphSaved(true))
       {
          script.CreateNewGraph();
       }
@@ -3136,6 +3150,9 @@ public sealed partial class uScript : EditorWindow
             GUILayout.Label(buildInfo, uScriptGUIStyle.ToolbarLabel);
          }
          EditorGUILayout.EndHorizontal();
+
+         // Graph tabs
+         this.DrawGraphTabs();
 
          // Canvas
          GUILayout.BeginVertical(GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
@@ -3694,6 +3711,8 @@ public sealed partial class uScript : EditorWindow
 
       //Debug.Log("clearing" );
       uScript.SetSetting("uScript\\LastOpened", string.Empty);
+
+      this.SetActiveGraphTab(string.Empty);
    }
 
    private void ClearEntityTypes()
@@ -3731,7 +3750,14 @@ public sealed partial class uScript : EditorWindow
          return false;
       }
 
-      if (this.WasCurrentGraphSaved(true) == false)
+      // With tabs, the open graph (and its unsaved changes) stays in its tab instead of asking to save it
+      bool openCanceled;
+      if (this.PrepareOpenGraphInTab(fullPath, out openCanceled))
+      {
+         return true;
+      }
+
+      if (openCanceled)
       {
          return false;
       }
@@ -3783,6 +3809,8 @@ public sealed partial class uScript : EditorWindow
          //ClearEntityTypes();
          //ClearLogicTypes();
          OpenFromCache();
+
+         this.SetActiveGraphTab(fullPath);
 
          //uScriptBackgroundProcess.ForceFileRefresh();
 

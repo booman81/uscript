@@ -192,6 +192,17 @@ public sealed partial class uScript
          return false;
       }
 
+      // The same goes for graphs kept in other tabs
+      var unsavedTabs = this.UnsavedBackgroundTabs(new[] { oldName }.Concat(dependentGraphs.Keys));
+      if (unsavedTabs.Count > 0)
+      {
+         EditorUtility.DisplayDialog(
+            "Rename Graph",
+            "Save or close these tabs first, they have unsaved changes:\n\n" + FormatList(unsavedTabs),
+            "OK");
+         return false;
+      }
+
       // Work out where the generated scripts are before anything moves
       var oldWrapperPath = NormalizeSlashes(this.GetGeneratedScriptPath(graphPath));
       var oldLogicPath = NormalizeSlashes(this.GetNestedScriptPath(graphPath));
@@ -247,6 +258,8 @@ public sealed partial class uScript
       }
 
       this.RefreshAfterGraphFileChange();
+
+      this.RenameGraphTab(graphPath, newGraphPath);
 
       if (isOpenGraph)
       {
@@ -330,9 +343,10 @@ public sealed partial class uScript
       }
 
       // Don't leave the deleted graph open in the editor
+      this.RemoveGraphTab(graphPath);
       if (this.IsOpenGraph(graphPath))
       {
-         this.CreateNewGraph();
+         this.CloseDeletedOpenGraph();
       }
 
       var failed = new List<string>();
