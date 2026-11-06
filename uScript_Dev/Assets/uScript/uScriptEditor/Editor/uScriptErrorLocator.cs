@@ -151,9 +151,17 @@ public static class uScriptErrorLocator
 
    private static string Link(string graphName, string nodeGuid, string text)
    {
-#if UNITY_2021_2_OR_NEWER
+#if UNITY_6000_0_OR_NEWER
+      // Unity 6 Console (TextCore): <link="name='value' ...">
       return string.Format(
          "<color=#4C9AFF><link=\"uscriptgraph='{0}' uscriptnode='{1}'\">{2}</link></color>",
+         graphName,
+         nodeGuid,
+         text);
+#elif UNITY_2021_2_OR_NEWER
+      // Unity 2021.2 - 2023 Console: <a name="value" ...>
+      return string.Format(
+         "<color=#4C9AFF><a uscriptgraph=\"{0}\" uscriptnode=\"{1}\">{2}</a></color>",
          graphName,
          nodeGuid,
          text);
