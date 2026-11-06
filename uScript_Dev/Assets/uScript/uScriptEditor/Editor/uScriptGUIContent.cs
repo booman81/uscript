@@ -71,7 +71,7 @@ public static class uScriptGUIContent
 
       ViewMenu = new GUIContent("View");
       ViewMenuItemPanels = new GUIContent("Show Panels/All _`");
-      ViewMenuItemPalettePanel = new GUIContent("Show Panels/Toobox");
+      ViewMenuItemPalettePanel = new GUIContent("Show Panels/Toolbox");
       ViewMenuItemContentsPanel = new GUIContent("Show Panels/Contents");
       ViewMenuItemPropertiesPanel = new GUIContent("Show Panels/Properties");
       ViewMenuItemReferencePanel = new GUIContent("Show Panels/Reference");

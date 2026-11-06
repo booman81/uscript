@@ -3272,10 +3272,10 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.ViewMenuItemPropertiesPanel, uScript.Instance.PropertiesVisible, this.CommandCanvasShowPropertiesPanel);
       menu.AddItem(uScriptGUIContent.ViewMenuItemReferencePanel, uScript.Instance.ReferenceVisible, this.CommandCanvasShowReferencePanel);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFileListPanel, uScript.Instance.ScriptsVisible, this.CommandCanvasShowFileListPanel);
+      menu.AddItem(new GUIContent("Show Panels/Minimap  (M)"), ShowMinimap, this.CommandToggleMinimap);
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.ViewMenuItemGrid, Preferences.ShowGrid, CommandViewMenuGrid);
       menu.AddItem(uScriptGUIContent.ViewMenuItemSnap, Preferences.GridSnap, CommandViewMenuSnap);
-      menu.AddItem(new GUIContent("Minimap  (M)"), ShowMinimap, this.CommandToggleMinimap);
       menu.AddDisabledItem(uScriptGUIContent.ViewMenuItemSnapSelected);
       menu.AddSeparator(string.Empty);
 
