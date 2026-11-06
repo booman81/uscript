@@ -91,13 +91,13 @@ public sealed partial class uScript
       }
 
       // Other graphs that contain this graph as a nested node refer to it by name, so they would break.
-      var parentGraphs = this.FindGraphsUsingNestedGraph(oldName);
+      var parentGraphs = this.FindGraphsUsingGraph(oldName);
       if (parentGraphs.Count > 0)
       {
          EditorUtility.DisplayDialog(
             "Rename Graph",
             string.Format(
-               "\"{0}\" is used as a nested graph inside:\n\n{1}\n\nRenaming it would break those graphs. Remove it from them first, rename it, then add it back.",
+               "\"{0}\" is used by these graphs (as a nested graph, or through its component's variables, events or properties):\n\n{1}\n\nThey refer to it by name, so renaming it would stop your project from compiling. Remove those nodes from them first, rename it, then add them back.",
                oldName,
                FormatList(parentGraphs)),
             "OK");
@@ -185,13 +185,13 @@ public sealed partial class uScript
 
       // Nested usage would leave other graphs' generated code referring to a class that no longer exists,
       // which stops the whole project from compiling.
-      var parentGraphs = this.FindGraphsUsingNestedGraph(graphName);
+      var parentGraphs = this.FindGraphsUsingGraph(graphName);
       if (parentGraphs.Count > 0)
       {
          EditorUtility.DisplayDialog(
             "Delete Graph",
             string.Format(
-               "\"{0}\" is used as a nested graph inside:\n\n{1}\n\nDeleting it would stop your project from compiling. Remove it from those graphs first.",
+               "\"{0}\" is used by these graphs (as a nested graph, or through its component's variables, events or properties):\n\n{1}\n\nDeleting it would stop your project from compiling. Remove those nodes from them first.",
                graphName,
                FormatList(parentGraphs)),
             "OK");
@@ -253,11 +253,16 @@ public sealed partial class uScript
       return true;
    }
 
-   /// <summary>Returns the names of graphs whose generated code uses the given graph as a nested node.</summary>
-   private List<string> FindGraphsUsingNestedGraph(string graphName)
+   /// <summary>
+   /// Returns the names of graphs whose generated code uses the given graph, either as a nested node
+   /// (class "Name") or through its component (class "Name_Component", e.g. reading its variables or
+   /// listening to its events). Those graphs refer to the classes by name.
+   /// </summary>
+   private List<string> FindGraphsUsingGraph(string graphName)
    {
       var result = new List<string>();
-      var pattern = new Regex(@"\b" + Regex.Escape(graphName) + @"\b");
+      var pattern = new Regex(
+         @"\b(" + Regex.Escape(graphName) + "|" + Regex.Escape(graphName + uScriptConfig.Files.GeneratedComponentExtension) + @")\b");
       var ownFiles = new[] { graphName + ".cs", graphName + uScriptConfig.Files.GeneratedComponentExtension + ".cs" };
 
       foreach (var file in GetFilePathsWithLabel("uScriptCode"))
