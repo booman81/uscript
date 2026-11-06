@@ -1349,6 +1349,7 @@ public sealed partial class uScript : EditorWindow
       }
 
       this.ProcessPendingNodeFocus();
+      this.ProcessPendingNestedGraph();
 
       // Process any pending node creation request
       if (m_ScriptEditorCtrl != null && !String.IsNullOrEmpty(this.pendingNodeSignature))
