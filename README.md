@@ -83,5 +83,15 @@ scripts no longer recompiles uScript.
   all nodes (also in the right-click and View menus). The mouse wheel and the -/= keys
   zoom toward the mouse.
 * Sockets are easier to hit and highlight when the mouse is over them.
+* Drag a link onto empty canvas: Quick Add opens with only the nodes that can connect to
+  that socket, and the chosen node is placed and connected.
+* Graph tabs: several graphs open at once. Unsaved changes stay in their tab when you
+  switch; closing a changed tab asks to save. Middle-click or x closes, right-click for more.
+* Minimap in the bottom-right corner: click or drag to move the view, M to show/hide.
+* Reroute points: double-click a link to add a point (drag it), double-click a point to
+  remove it. Saved in the graph; older graphs open unchanged.
+* Make Nested Graph from Selection (right-click menu): moves the selected nodes into a new
+  graph with External Connections and replaces them with the new nested node after Unity
+  compiles it.
 * Removed: the update check, license/promotion/welcome windows and other features that
   depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.
