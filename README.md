@@ -90,5 +90,10 @@ scripts no longer recompiles uScript.
 * Minimap in the bottom-right corner: click or drag to move the view, M to show/hide.
 * Reroute points: double-click a link to add a point (drag it), double-click a point to
   remove it. Saved in the graph; older graphs open unchanged.
+* File > Compile Graphs Separately (Faster Saves): generated graph code is compiled as its
+  own assembly (uScriptGraphs, plus uScriptNodes for your custom nodes), so saving a graph
+  no longer recompiles all your scripts. uScript checks first that graphs and nodes don't
+  use scripts from Assembly-CSharp (those would have to move into an asmdef), and keeps
+  the assembly references up to date when you save. Turn it off in the same menu.
 * Removed: the update check, license/promotion/welcome windows and other features that
   depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.

@@ -3251,6 +3251,8 @@ public sealed partial class uScript : EditorWindow
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.FileMenuItemRebuildGraphs, false, this.FileMenuItem_RebuildAll);
       menu.AddItem(uScriptGUIContent.FileMenuItemRemoveSource, false, this.FileMenuItem_Clean);
+      menu.AddSeparator(string.Empty);
+      menu.AddItem(new GUIContent("Compile Graphs Separately (Faster Saves)"), uScriptGraphAssembly.IsEnabled, uScriptGraphAssembly.Toggle);
 
       // @TODO: Consider changing the delegate function from "FileMenuItem_*" to "Command*"
       // @TODO: Consider adding Reload and Location commands
@@ -4001,6 +4003,48 @@ public sealed partial class uScript : EditorWindow
       return Preferences.NestedScripts + "/" + fileName;
    }
 
+   private static readonly SortedSet<string> pendingSeparateAssemblyProblems = new SortedSet<string>();
+
+   /// <summary>Collects problems from one or more saves (Rebuild All saves many) and asks once.</summary>
+   private static void ReportSeparateAssemblyProblems(string graphName, List<string> problems)
+   {
+      if (problems == null || problems.Count == 0)
+      {
+         return;
+      }
+
+      var first = pendingSeparateAssemblyProblems.Count == 0;
+      foreach (var problem in problems)
+      {
+         pendingSeparateAssemblyProblems.Add(problem);
+         Debug.LogWarning("uScript - Compile Graphs Separately: " + problem);
+      }
+
+      if (!first)
+      {
+         return;
+      }
+
+      EditorApplication.delayCall += () =>
+      {
+         var list = pendingSeparateAssemblyProblems.Take(12).ToList();
+         pendingSeparateAssemblyProblems.Clear();
+
+         var turnOff = EditorUtility.DisplayDialog(
+            "Compile Graphs Separately",
+            "Graphs use these scripts from your project, which the separate graph assembly can't reach, so the graph code will not compile:\n\n"
+            + string.Join("\n", list.ToArray())
+            + "\n\nTurn \"Compile Graphs Separately\" off? (Or keep it and put those scripts in an Assembly Definition.)",
+            "Turn Off",
+            "Keep");
+
+         if (turnOff)
+         {
+            uScriptGraphAssembly.Disable(false);
+         }
+      };
+   }
+
    private bool SaveGraph(ScriptEditor script, string binaryPath, bool generateCode, bool generateDebugInfo, bool stubCode, bool textMode = false)
    {
       bool result;
@@ -4009,6 +4053,12 @@ public sealed partial class uScript : EditorWindow
       {
          string wrapperPath = this.GetGeneratedScriptPath(binaryPath);
          string logicPath = this.GetNestedScriptPath(binaryPath);
+
+         // With "Compile Graphs Separately" on, make sure the graph assembly can see everything this graph uses
+         if (!stubCode)
+         {
+            ReportSeparateAssemblyProblems(Path.GetFileNameWithoutExtension(binaryPath), uScriptGraphAssembly.UpdateForGraph(script));
+         }
 
          result = script.Save(binaryPath, logicPath, wrapperPath, generateDebugInfo, stubCode, textMode);
 
