@@ -25,6 +25,13 @@ This code is provided as-is under the MIT license. Detox Studios has sunsetted u
 www.detoxstudios.com
 
 
+** User Guide for this version **
+
+See docs/USER_GUIDE.md (https://github.com/booman81/uscript/blob/develop/docs/USER_GUIDE.md)
+for installing, Unity 6 notes and everything new: tabs, Quick Add, the Variables tab,
+error links, reroute points, the minimap and faster saves.
+
+
 ** Installing uScript from GitHub (recommended) **
 
 In Unity: Window > Package Manager > "+" > "Install package from git URL..." and enter:
