@@ -23,6 +23,11 @@ public sealed partial class uScript
    private const float MinZoom = 0.1f;
    private const float MaxZoom = 1.0f;
 
+   // Minimum space kept between nodes by Align and Distribute. Vertical is larger because variable
+   // nodes draw their name below the node.
+   private const int LayoutGapX = 30;
+   private const int LayoutGapY = 30;
+
    public enum NodeAlignment
    {
       Left,
@@ -230,10 +235,47 @@ public sealed partial class uScript
          }
       }
 
+      // Nodes that now share a row (Top/Middle/Bottom) or a column (Left/Center/Right) are pushed apart
+      // along that row/column, keeping their order, so nothing ends up on top of something else.
+      bool row = alignment == NodeAlignment.Top || alignment == NodeAlignment.Middle || alignment == NodeAlignment.Bottom;
+      this.SeparateOverlaps(nodes, row, moved);
+
       this.CommitNodeMoves(moved);
    }
 
-   /// <summary>Spaces the selected nodes so the gaps between them are equal. The outer nodes stay put.</summary>
+   /// <summary>
+   /// Sweeps along one axis and moves each node just far enough to leave a gap after the previous one.
+   /// The first node never moves.
+   /// </summary>
+   private void SeparateOverlaps(FlowNode[] nodes, bool horizontal, List<FlowNode> moved)
+   {
+      var sorted = horizontal
+         ? nodes.OrderBy(n => n.Location.X).ThenBy(n => n.Location.Y).ToArray()
+         : nodes.OrderBy(n => n.Location.Y).ThenBy(n => n.Location.X).ToArray();
+
+      int gap = horizontal ? LayoutGapX : LayoutGapY;
+      int previousEnd = int.MinValue;
+
+      foreach (var node in sorted)
+      {
+         var location = node.Location;
+         int start = horizontal ? location.X : location.Y;
+
+         if (previousEnd != int.MinValue && start < previousEnd + gap)
+         {
+            start = previousEnd + gap;
+            node.Location = horizontal ? new Point(start, location.Y) : new Point(location.X, start);
+            if (!moved.Contains(node)) moved.Add(node);
+         }
+
+         previousEnd = start + (horizontal ? node.Size.Width : node.Size.Height);
+      }
+   }
+
+   /// <summary>
+   /// Spaces the selected nodes so the gaps between them are equal. The outer nodes stay put unless the nodes
+   /// do not fit between them, then the gap is the minimum and the last node moves out.
+   /// </summary>
    public void CommandDistributeSelectedNodes(bool horizontal)
    {
       if (m_ScriptEditorCtrl == null) return;
@@ -249,6 +291,10 @@ public sealed partial class uScript
       int end = horizontal ? sorted.Max(n => n.Bounds.Right) : sorted.Max(n => n.Bounds.Bottom);
       int totalSize = sorted.Sum(n => horizontal ? n.Size.Width : n.Size.Height);
       float gap = (float)(end - start - totalSize) / (sorted.Length - 1);
+
+      // Not enough room between the outer nodes: use the minimum gap and let the row/column grow instead of
+      // overlapping nodes.
+      gap = Math.Max(gap, horizontal ? LayoutGapX : LayoutGapY);
 
       var moved = new List<FlowNode>();
       float position = start;
