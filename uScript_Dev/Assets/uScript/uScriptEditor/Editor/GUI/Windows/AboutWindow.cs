@@ -65,9 +65,9 @@ namespace Detox.Editor.GUI.Windows
          GUILayout.Label(string.Format("Build {0} ({1})", uScriptBuild.Number, UnityVersion), Style.ProductVersion);
          GUILayout.Label(string.Format("\n{0}\nAll rights reserved.\n", uScriptBuild.Copyright), Style.ProductCopyright);
 
-         if (GUILayout.Button("www.detoxstudios.com", Style.WebsiteLink))
+         if (GUILayout.Button("github.com/booman81/uscript", Style.WebsiteLink))
          {
-            Application.OpenURL("http://detoxstudios.com/");
+            Application.OpenURL(uScriptUtility.ProjectURL);
          }
       }
 

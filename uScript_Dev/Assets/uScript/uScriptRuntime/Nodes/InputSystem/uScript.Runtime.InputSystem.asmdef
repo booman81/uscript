@@ -1,0 +1,25 @@
+{
+    "name": "uScript.Runtime.InputSystem",
+    "rootNamespace": "",
+    "references": [
+        "uScript.Runtime",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "USCRIPT_INPUTSYSTEM"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.1.0",
+            "define": "USCRIPT_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

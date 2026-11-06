@@ -87,12 +87,10 @@ public static class uScriptGUIContent
       ViewMenuItemZoomReset = new GUIContent("Zoom/Reset Zoom _0");
       
       HelpMenu = new GUIContent("Help");
-      HelpMenuItemOnlineDocs = new GUIContent("Online Documentation _F1");
-      HelpMenuItemOnlineForum = new GUIContent("Online Forums");
+      HelpMenuItemOnlineDocs = new GUIContent("User Guide (PDF) _F1");
+      HelpMenuItemOnlineForum = new GUIContent("uScript on GitHub");
       HelpMenuItemShortcuts = new GUIContent("Quick Command Reference");
-      HelpMenuItemUpdates = new GUIContent("Check for Updates");
       HelpMenuItemAbout = new GUIContent("About uScript");
-      HelpMenuItemWelcome = new GUIContent("Welcome Window");
 
 #if DETOX_STORE_PLE || UNITY_STORE_PLE
       HelpMenuItemBuyPro = new GUIContent("Buy uScript Pro");
@@ -315,11 +313,9 @@ public static class uScriptGUIContent
 
    public static GUIContent HelpMenuItemShortcuts { get; private set; }
 
-   public static GUIContent HelpMenuItemUpdates { get; private set; }
 
    public static GUIContent HelpMenuItemAbout { get; private set; }
 
-   public static GUIContent HelpMenuItemWelcome { get; private set; }
 
 #if DETOX_STORE_PLE || UNITY_STORE_PLE
    public static GUIContent HelpMenuItemBuyPro { get; private set; }

@@ -218,12 +218,6 @@ namespace Detox.Editor
          set { EditorPrefs.SetBool("DetoxStudios.uScript.GridSnap", value); }
       }
 
-      public static bool ShowAtStartup
-      {
-         get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowAtStartup"); }
-         set { EditorPrefs.SetBool("DetoxStudios.uScript.ShowAtStartup", value); }
-      }
-
       public static bool ShowAllHotkeys
       {
          get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowAllHotkeys"); }
@@ -234,36 +228,6 @@ namespace Detox.Editor
       {
          get { return EditorPrefs.GetBool("DetoxStudios.uScript.LeftMouseButtonPrimary"); }
          set { EditorPrefs.SetBool("DetoxStudios.uScript.LeftMouseButtonPrimary", value); }
-      }
-
-      public static bool CheckForUpdate
-      {
-         get { return EditorPrefs.GetBool("DetoxStudios.uScript.CheckForUpdate"); }
-         set { EditorPrefs.SetBool("DetoxStudios.uScript.CheckForUpdate", value); }
-      }
-
-      public static int LastPromotionCheck
-      {
-         get { return EditorPrefs.GetInt("DetoxStudios.uScript.LastPromotionCheck"); }
-         set { EditorPrefs.SetInt("DetoxStudios.uScript.LastPromotionCheck", value); }
-      }
-
-      public static string IgnorePromotions
-      {
-         get { return EditorPrefs.GetString("DetoxStudios.uScript.IgnorePromotions"); }
-         set { EditorPrefs.SetString("DetoxStudios.uScript.IgnorePromotions", value); }
-      }
-
-      public static int LastUpdateCheck
-      {
-         get { return EditorPrefs.GetInt("DetoxStudios.uScript.LastUpdateCheck"); }
-         set { EditorPrefs.SetInt("DetoxStudios.uScript.LastUpdateCheck", value); }
-      }
-
-      public static string IgnoreUpdateBuild
-      {
-         get { return EditorPrefs.GetString("DetoxStudios.uScript.IgnoreUpdateBuild"); }
-         set { EditorPrefs.SetString("DetoxStudios.uScript.IgnoreUpdateBuild", value); }
       }
 
       public static int PropertyPanelNodeLimit
@@ -633,14 +597,8 @@ namespace Detox.Editor
          SetDefault("DoubleClickBehavior", DoubleClickBehaviorType.PingSource.ToString(), force);
          SetDefault("VariableExpansion", VariableExpansionType.Dynamic.ToString(), force);
          SetDefault("GridSnap", false, force);
-         SetDefault("ShowAtStartup", true, force);
          SetDefault("ShowAllHotkeys", false, force);
          SetDefault("LeftMouseButtonPrimary", true, force);
-         SetDefault("CheckForUpdate", true, force);
-         SetDefault("LastPromotionCheck", 0, force);
-         SetDefault("IgnorePromotions", string.Empty, force);
-         SetDefault("LastUpdateCheck", 0, force);  
-         SetDefault("IgnoreUpdateBuild", string.Empty, force);
 
          SetDefault("RelativeProjectFiles", uScriptConfig.ConstantPaths.RelativePathInAssets(UnityEngine.Application.dataPath + "/uScriptProjectFiles"), force);
          SetDefault("RelativeUserScripts", uScriptConfig.ConstantPaths.RelativePathInAssets(ProjectFiles + "/uScripts"), force);

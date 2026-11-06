@@ -1,0 +1,30 @@
+{
+    "name": "uScript.Runtime.TextMeshPro",
+    "rootNamespace": "",
+    "references": [
+        "uScript.Runtime",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [
+        "USCRIPT_TEXTMESHPRO"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.textmeshpro",
+            "expression": "1.0.0",
+            "define": "USCRIPT_TEXTMESHPRO"
+        },
+        {
+            "name": "com.unity.ugui",
+            "expression": "2.0.0",
+            "define": "USCRIPT_TEXTMESHPRO"
+        }
+    ],
+    "noEngineReferences": false
+}

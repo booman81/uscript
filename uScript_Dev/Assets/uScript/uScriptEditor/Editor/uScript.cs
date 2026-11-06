@@ -199,7 +199,6 @@ public sealed partial class uScript : EditorWindow
 
    private static bool shouldTestCompatibility;
 
-   private static bool shouldPerformUpdateCheck;
 
    private static bool panelPositionsAndSizesLoaded = false;
 
@@ -259,6 +258,9 @@ public sealed partial class uScript : EditorWindow
    private Vector2 zoomPoint;
 
    private string pendingNodeSignature = string.Empty;
+   private Point? pendingNodePosition;
+   private Vector2? pendingQuickAddGuiPosition;
+   private Point pendingQuickAddCanvasPosition;
    private bool pendingNodeUsesMousePosition;
    private KeyCode pressedKey = KeyCode.None;
 
@@ -764,11 +766,6 @@ public sealed partial class uScript : EditorWindow
       shouldTestCompatibility = true;
    }
 
-   private static void RequestUpdateCheck()
-   {
-      shouldPerformUpdateCheck = true;
-   }
-
    private static void VerifyBuildCompatibility()
    {
       if (shouldTestCompatibility == false || UnityVersion > 1)
@@ -791,24 +788,6 @@ public sealed partial class uScript : EditorWindow
       EditorUtility.DisplayDialog("Incompatibility Warning", msg, "Okay");
    }
 
-   private static void PerformUpdateCheck()
-   {
-      if (shouldPerformUpdateCheck == false)
-      {
-         return;
-      }
-
-      shouldPerformUpdateCheck = false;
-
-      UpdateNotification.StartupCheck();
-   }
-
-   private static void PerformPromotionCheck()
-   {
-#if DETOX_STORE_PLE || UNITY_STORE_PLE
-      PromotionWindow.StartupCheck();
-#endif
-   }
 
    private void Launching()
    {
@@ -1216,10 +1195,6 @@ public sealed partial class uScript : EditorWindow
 
       VerifyBuildCompatibility();
 
-      PerformUpdateCheck();
-
-      PerformPromotionCheck();
-
       //Debug.Log("Update()\n" + EditorWindow.focusedWindow + " has focus, the mouse is over " + EditorWindow.mouseOverWindow);
 
       if (null == this.complexData)
@@ -1230,23 +1205,8 @@ public sealed partial class uScript : EditorWindow
 
       if (null == m_ScriptEditorCtrl) return;
 
-#if !(UNITY_STORE_PRO || UNITY_STORE_PLE)
-      // Initialize the LicenseWindow here if needed. Doing it during OnGUI may
-      // cause issues, such as null exception errors and reports that OnGUI calls
-      // are being made outside of OnGUI.
-      //
-      if (IsLicenseAccepted == false)
-      {
-          IsLicenseAccepted = LicenseWindow.HasUserAcceptedLicense();
-          if (IsLicenseAccepted == false && LicenseWindow.isOpen == false)
-         {
-            LicenseWindow.Init();
-         }
-      }
-#else
-      // Force the license acceptance
+      // uScript is open source (MIT license), so there is no EULA to accept anymore
       this.IsLicenseAccepted = true;
-#endif
 
       if (EditorApplication.isPlaying)
       {
@@ -1379,7 +1339,9 @@ public sealed partial class uScript : EditorWindow
       {
          m_ScriptEditorCtrl.DeselectAll();
 
-         Point canvasPosition = (this.pendingNodeUsesMousePosition
+         Point canvasPosition = this.pendingNodePosition.HasValue
+            ? this.pendingNodePosition.Value
+            : (this.pendingNodeUsesMousePosition
             ? Detox.Windows.Forms.Cursor.ScaledPosition
             : new Point((int)(NodeWindowRect.width * 0.5f), (int)(NodeWindowRect.height * 0.5f))); // viewport center
 
@@ -1413,6 +1375,7 @@ public sealed partial class uScript : EditorWindow
          }
 
          this.pendingNodeSignature = string.Empty;
+         this.pendingNodePosition = null;
       }
 
       //we can't ignore if the context menu is up
@@ -1526,6 +1489,21 @@ public sealed partial class uScript : EditorWindow
       {
          // Create a new context menu, destroying the old one
          this._canvasContextMenu = new GenericMenu();
+
+         // Quick Add search entry. Menu callbacks run outside of OnGUI, so remember where to open
+         // the popup now and open it on the next OnGUI call.
+         var quickAddGuiPosition = Event.current != null ? Event.current.mousePosition : this._canvasRect.center;
+         var quickAddCanvasPosition = Detox.Windows.Forms.Cursor.ScaledPosition;
+         this._canvasContextMenu.AddItem(
+            new GUIContent("Search Nodes...  (Space)"),
+            false,
+            () =>
+            {
+               this.pendingQuickAddGuiPosition = quickAddGuiPosition;
+               this.pendingQuickAddCanvasPosition = quickAddCanvasPosition;
+               this.Repaint();
+            });
+         this._canvasContextMenu.AddSeparator(string.Empty);
 
          ContextMenuStrip contextMenu = (Control.ModifierKeys.Pressed & Keys.Shift) != 0 ?
             m_ScriptEditorCtrl.ContextMenuWithReflection :
@@ -1726,6 +1704,14 @@ public sealed partial class uScript : EditorWindow
 
       var lastMouseDown = this.mouseDown;
 
+      // Open the Quick Add popup requested from the context menu
+      if (this.pendingQuickAddGuiPosition.HasValue)
+      {
+         var quickAddGuiPosition = this.pendingQuickAddGuiPosition.Value;
+         this.pendingQuickAddGuiPosition = null;
+         Detox.Editor.GUI.Windows.QuickAddPopup.Show(quickAddGuiPosition, this.pendingQuickAddCanvasPosition);
+      }
+
       this.isContextMenuOpen = 0 != this.m_ContextX || 0 != this.m_ContextY;
       if (this.isContextMenuOpen)
       {
@@ -1885,13 +1871,7 @@ public sealed partial class uScript : EditorWindow
       uScriptGUI.PanelScriptsWidth = (int)(Instance.position.width / 3);
       panelPositionsAndSizesLoaded = false;
 
-      if (Preferences.ShowAtStartup)
-      {
-         EditorCommands.OpenWelcomeWindow();
-      }
-
       RequestVersionCompatiblyTest();
-      RequestUpdateCheck();
    }
 
    public static void CloseEditorWindow()
@@ -2332,6 +2312,38 @@ public sealed partial class uScript : EditorWindow
    {
       this.pendingNodeSignature = nodeSignature;
       this.pendingNodeUsesMousePosition = useMousePosition;
+      this.pendingNodePosition = null;
+   }
+
+   /// <summary>Notifies uScript that a node should be created at a specific canvas position.</summary>
+   /// <param name='nodeSignature'>The unique node signature as generated by uScript.GetNodeSignature().</param>
+   /// <param name='canvasPosition'>The canvas position (same space as Cursor.ScaledPosition).</param>
+   public void PlaceNodeOnCanvas(string nodeSignature, Point canvasPosition)
+   {
+      this.pendingNodeSignature = nodeSignature;
+      this.pendingNodeUsesMousePosition = true;
+      this.pendingNodePosition = canvasPosition;
+   }
+
+   /// <summary>Opens the Quick Add search popup under the mouse (call from OnGUI).</summary>
+   public void ShowQuickAddPopup()
+   {
+      if (Event.current == null || m_ScriptEditorCtrl == null)
+      {
+         return;
+      }
+
+      var guiPosition = Event.current.mousePosition;
+      var canvasPosition = Detox.Windows.Forms.Cursor.ScaledPosition;
+
+      // If the mouse isn't over the canvas, open in the middle of it instead
+      if (!this._canvasRect.Contains(guiPosition))
+      {
+         guiPosition = this._canvasRect.center;
+         canvasPosition = new Point((int)(NodeWindowRect.width * 0.5f), (int)(NodeWindowRect.height * 0.5f));
+      }
+
+      Detox.Editor.GUI.Windows.QuickAddPopup.Show(guiPosition, canvasPosition);
    }
 
 #if UNITY_2017_2_OR_NEWER
@@ -2739,29 +2751,19 @@ public sealed partial class uScript : EditorWindow
    }
 #endif
 
-   private static void CommandHelpMenuWelcome()
-   {
-      EditorCommands.OpenWelcomeWindow();
-   }
-
    private static void CommandHelpMenuDocs()
    {
-      Help.BrowseURL("http://docs.uscript.net/");
+      uScriptUtility.OpenUserGuide();
    }
 
    private static void CommandHelpMenuForum()
    {
-      Help.BrowseURL("http://uscript.net/forum/");
+      Help.BrowseURL(uScriptUtility.ProjectURL);
    }
 
    private static void CommandHelpMenuShortcuts()
    {
       ReferenceWindow.Init();
-   }
-
-   private static void CommandHelpMenuUpdates()
-   {
-      UpdateNotification.ManualCheck();
    }
 
    public void CommandCanvasShowPanels()
@@ -3249,11 +3251,9 @@ public sealed partial class uScript : EditorWindow
       var menu = new GenericMenu();
 
       menu.AddItem(uScriptGUIContent.HelpMenuItemShortcuts, false, CommandHelpMenuShortcuts);
-      menu.AddItem(uScriptGUIContent.HelpMenuItemWelcome, false, CommandHelpMenuWelcome);
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.HelpMenuItemOnlineDocs, false, CommandHelpMenuDocs);
       menu.AddItem(uScriptGUIContent.HelpMenuItemOnlineForum, false, CommandHelpMenuForum);
-      menu.AddItem(uScriptGUIContent.HelpMenuItemUpdates, false, CommandHelpMenuUpdates);
       menu.AddSeparator(string.Empty);
 
 #if DETOX_STORE_PLE || UNITY_STORE_PLE

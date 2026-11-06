@@ -361,6 +361,50 @@ public sealed class uScriptGUIPanelToolbox : uScriptGUIPanel
       return null;
    }
 
+   /// <summary>Returns every node in the toolbox (not the folders), used by the Quick Add search popup.</summary>
+   public List<PaletteMenuItem> GetAllNodeMenuItems()
+   {
+      var result = new List<PaletteMenuItem>();
+
+      if (this.paletteMenuItems == null)
+      {
+         this.BuildPaletteMenu();
+      }
+
+      if (this.paletteMenuItems != null)
+      {
+         foreach (var item in this.paletteMenuItems)
+         {
+            CollectNodeMenuItems(item, result);
+         }
+      }
+
+      return result;
+   }
+
+   private static void CollectNodeMenuItems(PaletteMenuItem item, List<PaletteMenuItem> result)
+   {
+      if (item == null)
+      {
+         return;
+      }
+
+      if (item.Items == null)
+      {
+         if (item.Tag is EntityNode)
+         {
+            result.Add(item);
+         }
+
+         return;
+      }
+
+      foreach (var child in item.Items)
+      {
+         CollectNodeMenuItems(child, result);
+      }
+   }
+
    public EntityNode GetToolboxNode(string nodeSignature)
    {
       var menuItem = GetToolboxMenuItem(nodeSignature);

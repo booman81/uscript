@@ -42,6 +42,7 @@ namespace Detox.Editor.GUI
          Add(Keys.None, KeyCode.KeypadPlus, Command.ZoomIn);
          Add(Keys.None, KeyCode.Alpha0, Command.ZoomReset);
          Add(Keys.None, KeyCode.Menu, Command.ShowCanvasContextMenu);
+         Add(Keys.None, KeyCode.Space, Command.QuickAddNode);
 
          Add(Keys.Control, KeyCode.F, Command.OpenFileMenu);
          Add(Keys.Control, KeyCode.G, Command.ToggleGrid);
@@ -271,7 +272,7 @@ namespace Detox.Editor.GUI
 
          public static void OpenWebDocumentation()
          {
-            Help.BrowseURL("http://docs.uscript.net/");
+            uScriptUtility.OpenUserGuide();
          }
 
          public static void PlaceOnCanvasBool()
@@ -287,6 +288,11 @@ namespace Detox.Editor.GUI
          public static void PlaceOnCanvasExternalConnection()
          {
             uScript.Instance.PlaceNodeOnCanvas("ExternalConnection", true);
+         }
+
+         public static void QuickAddNode()
+         {
+            uScript.Instance.ShowQuickAddPopup();
          }
 
          public static void PlaceOnCanvasFavorite1()

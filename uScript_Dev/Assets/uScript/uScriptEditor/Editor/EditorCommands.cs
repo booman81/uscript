@@ -30,10 +30,5 @@ namespace Detox.Editor
       
       // maintained for backwards compatibility
       public static void OpenPreferenceWindow() { }
-
-      public static void OpenWelcomeWindow()
-      {
-         WelcomeWindow.Open();
-      }
    }
 }

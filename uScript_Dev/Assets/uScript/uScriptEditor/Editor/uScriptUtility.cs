@@ -19,6 +19,41 @@ using UnityEngine;
 
 public static class uScriptUtility
 {
+   /// <summary>The GitHub home of this (open source) version of uScript.</summary>
+   public const string ProjectURL = "https://github.com/booman81/uscript";
+
+   /// <summary>Opens the uScript User Guide PDF that ships with uScript.</summary>
+   public static void OpenUserGuide()
+   {
+      var path = uScriptConfig.ConstantPaths.Root + "/Documentation/uScript_User_Guide.pdf";
+      if (File.Exists(path))
+      {
+         EditorUtility.OpenWithDefaultApp(path);
+      }
+      else
+      {
+         Help.BrowseURL(ProjectURL);
+      }
+   }
+
+   /// <summary>
+   /// Opens a help link. The original uscript.net / detoxstudios.com sites are offline, so links to them
+   /// open the bundled User Guide instead.
+   /// </summary>
+   public static void OpenHelpURL(string url)
+   {
+      if (string.IsNullOrEmpty(url)
+          || url.IndexOf("uscript.net", StringComparison.OrdinalIgnoreCase) >= 0
+          || url.IndexOf("detoxstudios.com", StringComparison.OrdinalIgnoreCase) >= 0)
+      {
+         OpenUserGuide();
+      }
+      else
+      {
+         Help.BrowseURL(url);
+      }
+   }
+
    /// <summary>
    /// Returns the common parent path in a list of paths or an empty string, if none is found.
    /// </summary>

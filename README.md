@@ -51,7 +51,23 @@ scripts no longer recompiles uScript.
   (or "Input Manager (Old)").
 * Unity UI: the UI event/InputField nodes need the "Unity UI" (com.unity.ugui) package,
   which is installed by default in new projects.
-* Legacy networking (Network/MasterServer) nodes are excluded automatically, as that API
-  was removed from Unity in 2018.2.
+* Legacy networking (Network/MasterServer) nodes were removed, as that API was removed
+  from Unity in 2018.2.
 * Rigidbody velocity, PhysicMaterial and the Hierarchy icon use the Unity 6 APIs
   (linearVelocity, PhysicsMaterial, EntityId) when compiled in Unity 6.
+
+
+** New in this version **
+
+* Quick Add: press Space on the canvas (or right-click > Search Nodes...), type part of a
+  node's name or category, and press Enter to place it under the mouse. Arrow keys move
+  the selection, Esc closes.
+* TextMeshPro nodes (Actions > TextMeshPro): Set Text, Set Color, Set Font Size, Get Text.
+  They appear automatically when TextMeshPro is available (built into Unity UI 2.0 in Unity 6).
+* Input System nodes, available when the Input System package is installed:
+  - Conditions > Input System > Input Action: Pressed / Released / Held / Not Held + value.
+  - Events > Input Events > Input System Events: fires On Action Pressed / Released.
+  Action names can be "Jump" or "Player/Jump" and work with Unity 6 project-wide actions
+  and Player Input components.
+* Removed: the update check, license/promotion/welcome windows and other features that
+  depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.

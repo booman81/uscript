@@ -438,12 +438,12 @@ namespace Detox.Editor
 
       private void OpenWebForum()
       {
-         Help.BrowseURL("http://uscript.net/forum");
+         Help.BrowseURL(uScriptUtility.ProjectURL);
       }
 
       private void OpenWebHelp()
       {
-         Help.BrowseURL(this.toolbarButtonHelpURL);
+         uScriptUtility.OpenHelpURL(this.toolbarButtonHelpURL);
       }
 
       private void PingSource()
@@ -461,10 +461,7 @@ namespace Detox.Editor
       private void UpdateInformationForGraph()
       {
          this.toolbarButtonHelpURL = "http://docs.uscript.net/";
-         this.toolbarButtonHelpTooltip = string.Format(
-            "{0}\n\n({1})",
-            "Open the online uScript User Guide in the default web browser.",
-            this.toolbarButtonHelpURL);
+         this.toolbarButtonHelpTooltip = "Open the uScript User Guide (PDF).";
       }
 
       private void UpdateInformationForNode(EntityNode node)

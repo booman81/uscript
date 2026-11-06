@@ -515,6 +515,7 @@ namespace Detox.Editor.GUI.Windows
             this.DrawCommand("Switch node palette to Toolbox", "[alt]+[T]");
             this.DrawCommand("Switch node palette to Contents", "[Alt]+[C]");
             this.DrawCommand("Search in Toolbox or Contents", "[Alt]+[M]");
+            this.DrawCommand("Quick add a node (search, then Enter)", "[Space]");
          }
 
          EditorGUILayout.EndVertical();

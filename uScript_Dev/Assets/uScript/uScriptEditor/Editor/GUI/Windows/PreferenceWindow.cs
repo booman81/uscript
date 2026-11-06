@@ -153,10 +153,7 @@ namespace Detox.Editor.GUI.Windows
          var location = (Detox.Editor.Preferences.MenuLocationType)EditorGUILayout.EnumPopup("Menu Location", Preferences.MenuLocation);
          Preferences.MenuLocation = location;
 
-         var boolValue = EditorGUILayout.Toggle("Show Welcome Window on Start", Preferences.ShowAtStartup);
-         Preferences.ShowAtStartup = boolValue;
-
-         boolValue = EditorGUILayout.Toggle("Show uScript Icon in Hierarchy", Preferences.ShowHierarchyIcon);
+         var boolValue = EditorGUILayout.Toggle("Show uScript Icon in Hierarchy", Preferences.ShowHierarchyIcon);
          Preferences.ShowHierarchyIcon = boolValue;
 
          boolValue = EditorGUILayout.Toggle("Enable uScript Scene Warning", Preferences.EnableSceneWarning);
@@ -174,19 +171,6 @@ namespace Detox.Editor.GUI.Windows
          boolValue = EditorGUILayout.Toggle("Enable Version Control Support", Preferences.EnableVersionControl);
          Preferences.EnableVersionControl = boolValue;
 
-         EditorGUILayout.BeginHorizontal();
-         {
-            boolValue = EditorGUILayout.Toggle("Check for Updates on Start", Preferences.CheckForUpdate);
-            Preferences.CheckForUpdate = boolValue;
-
-            if (GUILayout.Button("Check Now", EditorStyles.miniButton, GUILayout.ExpandWidth(false)))
-            {
-               UpdateNotification.ManualCheck();
-            }
-         }
-
-         EditorGUILayout.EndHorizontal();
-
          EditorGUILayout.Separator();
       }
 
@@ -198,19 +182,6 @@ namespace Detox.Editor.GUI.Windows
          }
 
          GUILayout.Label("Development Debug Settings", EditorStyles.boldLabel);
-
-         // Add some development fields for debugging and testing
-         var promotionLastCheck = EditorGUILayout.IntField("Last Promotion Check", Preferences.LastPromotionCheck);
-         Preferences.LastPromotionCheck = promotionLastCheck;
-
-         var promotionIgnoreList = EditorGUILayout.TextField("Promotion Ignore List", Preferences.IgnorePromotions);
-         Preferences.IgnorePromotions = promotionIgnoreList;
-
-         var updateLastCheck = EditorGUILayout.IntField("Last Update Check", Preferences.LastUpdateCheck);
-         Preferences.LastUpdateCheck = updateLastCheck;
-
-         var updateIgnoreBuild = EditorGUILayout.TextField("Update Check Build Ignore ID", Preferences.IgnoreUpdateBuild);
-         Preferences.IgnoreUpdateBuild = updateIgnoreBuild;
 
          EditorGUILayout.Separator();
       }
