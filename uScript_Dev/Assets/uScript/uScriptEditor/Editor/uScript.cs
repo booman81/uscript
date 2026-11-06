@@ -1413,6 +1413,19 @@ public sealed partial class uScript : EditorWindow
          }
       }
 
+      // Socket hover highlight
+      if (m_ScriptEditorCtrl != null && m_ScriptEditorCtrl.FlowChart != null)
+      {
+         if (this.mouseRegion == MouseRegion.Canvas && !isContextMenuOpen)
+         {
+            m_ScriptEditorCtrl.FlowChart.UpdateHoveredSocket();
+         }
+         else
+         {
+            m_ScriptEditorCtrl.FlowChart.ClearHoveredSocket();
+         }
+      }
+
       // Repaint if a request was previously made180
       if (pendingRepaintRequests > 0)
       {

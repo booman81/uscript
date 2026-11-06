@@ -37,6 +37,65 @@ namespace Detox.FlowChart
 
       public Node LinkStartNode { get { return m_StartLinkNode; } }
 
+      // === Socket hover ==========================================================================================
+
+      private Node m_HoverSocketNode;
+      private string m_HoverSocketName = string.Empty;
+      private Point m_LastHoverPosition = new Point(int.MinValue, int.MinValue);
+
+      /// <summary>The node whose socket is under the mouse (null if none).</summary>
+      public Node HoverSocketNode { get { return m_HoverSocketNode; } }
+
+      /// <summary>The name of the socket under the mouse.</summary>
+      public string HoverSocketName { get { return m_HoverSocketName; } }
+
+      /// <summary>Finds the socket under the mouse; repaints only when it changes. Called from uScript.Update().</summary>
+      public void UpdateHoveredSocket( )
+      {
+         Point position = Detox.Windows.Forms.Cursor.ScaledPosition;
+         if ( position == m_LastHoverPosition ) return;
+         m_LastHoverPosition = position;
+
+         Node hitNode = null;
+         string hitName = string.Empty;
+
+         foreach ( Control c in Controls )
+         {
+            Node node = c as Node;
+            if ( null == node ) continue;
+
+            Point local = node.PointToClient( position );
+
+            // Cheap bounds test first (sockets can stick out of the node a little)
+            if ( local.X < -12 || local.Y < -12 || local.X > node.Size.Width + 12 || local.Y > node.Size.Height + 12 ) continue;
+
+            AnchorPoint anchorPoint = new AnchorPoint( );
+            if ( true == node.PointInAnchorPoint(local, ref anchorPoint) )
+            {
+               hitNode = node;
+               hitName = anchorPoint.Name;
+               break;
+            }
+         }
+
+         SetHoveredSocket( hitNode, hitName );
+      }
+
+      public void ClearHoveredSocket( )
+      {
+         m_LastHoverPosition = new Point(int.MinValue, int.MinValue);
+         SetHoveredSocket( null, string.Empty );
+      }
+
+      private void SetHoveredSocket( Node node, string name )
+      {
+         if ( node == m_HoverSocketNode && name == m_HoverSocketName ) return;
+
+         m_HoverSocketNode = node;
+         m_HoverSocketName = name ?? string.Empty;
+         Invalidate( );  // Socket hover changed
+      }
+
       private List<Link> m_Links = new List<Link>( );
       private Hashtable  m_StyleHash = new Hashtable( );
 
@@ -1287,21 +1346,28 @@ namespace Detox.FlowChart
          if (uScript.Instance.NodeWindowRect == new Rect())
             return;
 
-         Vector2 screenOffset = Detox.Editor.Extensions.UnityEditorExtensions.DockedGUIOffset(uScript.Instance);
-
-         // We are two groups deep into clipping, so both need to be popped.
-         // Get the initial values first, so they can be restored correctly later.
+         // We are two groups deep into clipping (the canvas scroll view, then the window itself), so both need
+         // to be popped. Get the initial values first, so they can be restored correctly later.
          var group1 = GetGUIGroupRect();
          GUI.EndGroup();
+
+         // Now in the window's own coordinates, which is where _canvasRect and the mouse position are measured
+         Vector2 windowOrigin = GUIUtility.GUIToScreenPoint(Vector2.zero);
+
          var group2 = GetGUIGroupRect();
          GUI.EndGroup();
+
+         // Offset of the window's content inside its parent view. This used to be hard-coded (22 pixels for the
+         // tab bar plus the dock border), which is wrong in Unity 6 and made nodes draw a few pixels away from
+         // where the mouse hit tests them. Measure it instead.
+         Vector2 windowOffset = windowOrigin - GUIUtility.GUIToScreenPoint(Vector2.zero);
 
          Rect boundingArea = uScript.Instance._canvasRect;
 
          Rect clippedArea = ScaleSizeBy(boundingArea, 1.0f / Zoom, TopLeft(boundingArea));
 
-         clippedArea.x += screenOffset.x;
-         clippedArea.y += 22 + screenOffset.y;
+         clippedArea.x += windowOffset.x;
+         clippedArea.y += windowOffset.y;
          
          GUI.BeginGroup(clippedArea);
 
@@ -1906,6 +1972,8 @@ namespace Detox.FlowChart
          return true;
       }
 
+      private const float MinSocketHitSize = 14.0f;
+
       public bool PointInAnchorPoint( Point point, ref AnchorPoint hitPoint )
       {
          bool found = false;
@@ -1920,6 +1988,10 @@ namespace Detox.FlowChart
 
             float width  = ap.Width / 100.0f * Size.Width;
             float height = ap.Height / 100.0f * Size.Height;
+
+            // Sockets are small; give them a slightly larger hit area so they are easier to grab
+            width  = Math.Max( width,  MinSocketHitSize );
+            height = Math.Max( height, MinSocketHitSize );
 
             if ( point.X >= x - width  / 2 && point.X <= x + width / 2 &&
                  point.Y >= y - height / 2 && point.Y <= y + height / 2 )
@@ -2125,8 +2197,16 @@ namespace Detox.FlowChart
                //reget point incase the point render modified it
                point = m_AnchorPoints[ i ];
 
+               // Highlight the socket under the mouse (when not dragging a link; dragging has its own highlight)
+               string socketStyle = point.StyleName;
+               if ( false == connecting && null == flowChart.LinkStartNode &&
+                    flowChart.HoverSocketNode == this && flowChart.HoverSocketName == originalPoint.Name )
+               {
+                  socketStyle = originalPoint.StyleName + "_connecting";
+               }
+
                // Sockets
-               GUI.Box(new Rect(x + location.X - radius, y + location.Y - radius, diameter, diameter), "", uScriptConfig.Style.Get(point.StyleName));
+               GUI.Box(new Rect(x + location.X - radius, y + location.Y - radius, diameter, diameter), "", uScriptConfig.Style.Get(socketStyle) ?? uScriptConfig.Style.Get(point.StyleName));
 
                //return original style in case it was modified for rendering
                m_AnchorPoints[ i ] = originalPoint;
