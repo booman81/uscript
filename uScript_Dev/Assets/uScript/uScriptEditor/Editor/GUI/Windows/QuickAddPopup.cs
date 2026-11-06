@@ -26,11 +26,13 @@ namespace Detox.Editor.GUI.Windows
       private const float RowHeight = 20;
       private const int MaxVisibleRows = 16;
       private const int MaxResults = 200;
+      private const int MaxLinkResults = 2000;
 
       private static string lastSearch = string.Empty;
 
       private readonly List<Entry> allEntries;
       private readonly Detox.Drawing.Point canvasPosition;
+      private readonly LinkDropInfo link;
 
       private List<Entry> results = new List<Entry>();
       private string search;
@@ -42,18 +44,53 @@ namespace Detox.Editor.GUI.Windows
       private static GUIStyle rowStyle;
       private static GUIStyle pathStyle;
 
-      private QuickAddPopup(List<Entry> entries, Detox.Drawing.Point canvasPosition)
+      private QuickAddPopup(List<Entry> entries, Detox.Drawing.Point canvasPosition, LinkDropInfo link)
       {
          this.allEntries = entries;
          this.canvasPosition = canvasPosition;
-         this.search = lastSearch;
+         this.link = link;
+
+         // When connecting a dropped link the list is already narrowed down, so start with an empty search
+         this.search = link == null ? lastSearch : string.Empty;
          this.UpdateResults();
+      }
+
+      /// <summary>
+      /// When connecting a value socket, variables of exactly that type come first, then other variables.
+      /// </summary>
+      private static int LinkPriority(LinkDropInfo link, EntityNode node)
+      {
+         if (link == null || string.IsNullOrEmpty(link.Type))
+         {
+            return 0;
+         }
+
+         if (node is LocalNode)
+         {
+            return ((LocalNode)node).Value.Type == link.Type ? 0 : 1;
+         }
+
+         return 2;
+      }
+
+      private int ResultLimit
+      {
+         get { return this.link == null ? MaxResults : MaxLinkResults; }
       }
 
       /// <summary>Opens the popup at the given GUI position of the uScript window.</summary>
       /// <param name="guiPosition">Where to open the popup (uScript window GUI coordinates).</param>
       /// <param name="canvasPosition">Where the node should be placed (canvas coordinates).</param>
       public static void Show(Vector2 guiPosition, Detox.Drawing.Point canvasPosition)
+      {
+         Show(guiPosition, canvasPosition, null);
+      }
+
+      /// <summary>
+      /// Opens the popup. With <paramref name="link"/> set, only nodes that can connect to that socket are listed
+      /// and the chosen node is connected to it.
+      /// </summary>
+      public static void Show(Vector2 guiPosition, Detox.Drawing.Point canvasPosition, LinkDropInfo link)
       {
          var toolbox = uScriptGUIPanelToolbox.Instance;
          if (toolbox == null || uScript.Instance == null || uScript.Instance.ScriptEditorCtrl == null)
@@ -70,6 +107,11 @@ namespace Detox.Editor.GUI.Windows
                continue;
             }
 
+            if (link != null && !uScript.Instance.ScriptEditorCtrl.CanAutoLink(link, node))
+            {
+               continue;
+            }
+
             var path = item.Path ?? item.Name;
             var slash = path.LastIndexOf('/');
             var category = slash > 0 ? path.Substring(0, slash) : string.Empty;
@@ -81,8 +123,15 @@ namespace Detox.Editor.GUI.Windows
                Tooltip = item.Tooltip,
                Signature = uScript.GetNodeSignature(node),
                NameLower = item.Name.ToLowerInvariant(),
-               PathLower = path.ToLowerInvariant()
+               PathLower = path.ToLowerInvariant(),
+               Priority = LinkPriority(link, node)
             });
+         }
+
+         if (entries.Count == 0 && link != null)
+         {
+            uScriptDebug.Log("No nodes can be connected to the socket '" + link.Anchor + "'.", uScriptDebug.Type.Message);
+            return;
          }
 
          if (entries.Count == 0)
@@ -91,7 +140,7 @@ namespace Detox.Editor.GUI.Windows
             return;
          }
 
-         PopupWindow.Show(new Rect(guiPosition.x, guiPosition.y, 1, 1), new QuickAddPopup(entries, canvasPosition));
+         PopupWindow.Show(new Rect(guiPosition.x, guiPosition.y, 1, 1), new QuickAddPopup(entries, canvasPosition, link));
       }
 
       public override Vector2 GetWindowSize()
@@ -127,8 +176,8 @@ namespace Detox.Editor.GUI.Windows
          GUI.Label(
             infoRect,
             this.results.Count == 0
-               ? "No matching nodes"
-               : string.Format("{0}{1} nodes  —  Enter to add, Esc to close", this.results.Count, this.results.Count >= MaxResults ? "+" : string.Empty),
+               ? (this.link != null ? "No connectable nodes match" : "No matching nodes")
+               : string.Format((this.link != null ? "Connect to " + this.link.Anchor + ":  " : string.Empty) + "{0}{1} nodes  —  Enter to add, Esc to close", this.results.Count, this.results.Count >= this.ResultLimit ? "+" : string.Empty),
             EditorStyles.miniLabel);
 
          // Results list
@@ -286,7 +335,7 @@ namespace Detox.Editor.GUI.Windows
 
          if (uScript.Instance != null)
          {
-            uScript.Instance.PlaceNodeOnCanvas(entry.Signature, this.canvasPosition);
+            uScript.Instance.PlaceNodeOnCanvas(entry.Signature, this.canvasPosition, this.link);
             uScript.Instance.Focus();
             uScript.Instance.Repaint();
          }
@@ -309,8 +358,9 @@ namespace Detox.Editor.GUI.Windows
          if (words.Length == 0)
          {
             this.results = this.allEntries
-               .OrderBy(entry => entry.PathLower, StringComparer.Ordinal)
-               .Take(MaxResults)
+               .OrderBy(entry => entry.Priority)
+               .ThenBy(entry => entry.PathLower, StringComparer.Ordinal)
+               .Take(this.ResultLimit)
                .ToList();
             return;
          }
@@ -319,9 +369,10 @@ namespace Detox.Editor.GUI.Windows
             .Select(entry => new { Entry = entry, Score = Score(entry, words) })
             .Where(x => x.Score > 0)
             .OrderByDescending(x => x.Score)
+            .ThenBy(x => x.Entry.Priority)
             .ThenBy(x => x.Entry.Name.Length)
             .ThenBy(x => x.Entry.NameLower, StringComparer.Ordinal)
-            .Take(MaxResults)
+            .Take(this.ResultLimit)
             .Select(x => x.Entry)
             .ToList();
       }
@@ -371,6 +422,9 @@ namespace Detox.Editor.GUI.Windows
          public string Signature;
          public string NameLower;
          public string PathLower;
+
+         /// <summary>Lower is listed first (a variable of the exact type when connecting a dropped link).</summary>
+         public int Priority;
       }
    }
 }

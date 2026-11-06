@@ -266,6 +266,8 @@ public sealed partial class uScript : EditorWindow
    private Point? pendingNodePosition;
    private Vector2? pendingQuickAddGuiPosition;
    private Point pendingQuickAddCanvasPosition;
+   private LinkDropInfo pendingQuickAddLink;
+   private LinkDropInfo pendingNodeLink;
    private bool pendingNodeUsesMousePosition;
    private KeyCode pressedKey = KeyCode.None;
 
@@ -1383,11 +1385,20 @@ public sealed partial class uScript : EditorWindow
                m_ScriptEditorCtrl.ContextCursor = canvasPosition;
             }
 
-            m_ScriptEditorCtrl.AddVariableNode(entityNode);
+            if (this.pendingNodeLink != null)
+            {
+               // Created from a link dropped on empty canvas: place it so the connecting socket is under the mouse
+               m_ScriptEditorCtrl.AddNodeLinkedTo(entityNode, canvasPosition, this.pendingNodeLink);
+            }
+            else
+            {
+               m_ScriptEditorCtrl.AddVariableNode(entityNode);
+            }
          }
 
          this.pendingNodeSignature = string.Empty;
          this.pendingNodePosition = null;
+         this.pendingNodeLink = null;
       }
 
       //we can't ignore if the context menu is up
@@ -1526,6 +1537,7 @@ public sealed partial class uScript : EditorWindow
             {
                this.pendingQuickAddGuiPosition = quickAddGuiPosition;
                this.pendingQuickAddCanvasPosition = quickAddCanvasPosition;
+               this.pendingQuickAddLink = null;
                this.Repaint();
             });
          this._canvasContextMenu.AddSeparator(string.Empty);
@@ -1735,8 +1747,10 @@ public sealed partial class uScript : EditorWindow
       if (this.pendingQuickAddGuiPosition.HasValue)
       {
          var quickAddGuiPosition = this.pendingQuickAddGuiPosition.Value;
+         var quickAddLink = this.pendingQuickAddLink;
          this.pendingQuickAddGuiPosition = null;
-         Detox.Editor.GUI.Windows.QuickAddPopup.Show(quickAddGuiPosition, this.pendingQuickAddCanvasPosition);
+         this.pendingQuickAddLink = null;
+         Detox.Editor.GUI.Windows.QuickAddPopup.Show(quickAddGuiPosition, this.pendingQuickAddCanvasPosition, quickAddLink);
       }
 
       this.isContextMenuOpen = 0 != this.m_ContextX || 0 != this.m_ContextY;
@@ -2339,6 +2353,7 @@ public sealed partial class uScript : EditorWindow
       this.pendingNodeSignature = nodeSignature;
       this.pendingNodeUsesMousePosition = useMousePosition;
       this.pendingNodePosition = null;
+      this.pendingNodeLink = null;
    }
 
    /// <summary>Notifies uScript that a node should be created at a specific canvas position.</summary>
@@ -2346,9 +2361,26 @@ public sealed partial class uScript : EditorWindow
    /// <param name='canvasPosition'>The canvas position (same space as Cursor.ScaledPosition).</param>
    public void PlaceNodeOnCanvas(string nodeSignature, Point canvasPosition)
    {
+      this.PlaceNodeOnCanvas(nodeSignature, canvasPosition, null);
+   }
+
+   /// <summary>Creates a node at a canvas position and, when <paramref name='link'/> is set, connects it to that socket.</summary>
+   public void PlaceNodeOnCanvas(string nodeSignature, Point canvasPosition, LinkDropInfo link)
+   {
       this.pendingNodeSignature = nodeSignature;
       this.pendingNodeUsesMousePosition = true;
       this.pendingNodePosition = canvasPosition;
+      this.pendingNodeLink = link;
+   }
+
+   /// <summary>A link was released on empty canvas: open Quick Add with the nodes that can connect to it.</summary>
+   public void OnLinkDroppedOnCanvas(LinkDropInfo link)
+   {
+      var mouse = Detox.Windows.Forms.Cursor.AbsolutePosition;
+      this.pendingQuickAddGuiPosition = new Vector2(mouse.X + this._canvasRect.x, mouse.Y + this._canvasRect.y);
+      this.pendingQuickAddCanvasPosition = Detox.Windows.Forms.Cursor.ScaledPosition;
+      this.pendingQuickAddLink = link;
+      this.Repaint();
    }
 
    /// <summary>Opens the Quick Add search popup under the mouse (call from OnGUI).</summary>

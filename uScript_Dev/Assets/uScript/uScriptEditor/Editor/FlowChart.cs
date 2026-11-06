@@ -333,6 +333,9 @@ namespace Detox.FlowChart
          Controls.Sort(CompareNodes);
       }
 
+      /// <summary>Raised when a link being dragged is released over empty canvas.</summary>
+      public event Action<Node, AnchorPoint> LinkDroppedOnCanvas;
+
       public delegate void FlowChartLinkCreatedEventHandler(object sender, FlowchartLinkCreatedEventArgs e);
       public event FlowChartLinkCreatedEventHandler LinkCreated;
 
@@ -930,11 +933,15 @@ namespace Detox.FlowChart
             m_NodeMouseTracking = false;
             m_NodeMouseSizing   = false;
 
+            Node droppedLinkNode = null;
+            AnchorPoint droppedLinkAnchor = new AnchorPoint( );
+
             if ( null != m_StartLinkNode )
             {
                Point position = Detox.Windows.Forms.Cursor.ScaledPosition;
 
                AnchorPoint hitPoint = new AnchorPoint( );
+               bool overNode = false;
 
                foreach ( Control c in Controls )
                {
@@ -943,8 +950,17 @@ namespace Detox.FlowChart
                   if ( null != node )
                   {
                      Point localPosition = node.PointToClient( position );
+
+                     if ( localPosition.X >= 0 && localPosition.Y >= 0 &&
+                          localPosition.X <= node.Size.Width && localPosition.Y <= node.Size.Height )
+                     {
+                        overNode = true;
+                     }
+
                      if ( true == node.PointInAnchorPoint(localPosition, ref hitPoint) )
                      {
+                        overNode = true;
+
                         if ( true == m_LinkStartAnchor.Output && true == hitPoint.Input ||
                              true == m_LinkStartAnchor.Input  && true == hitPoint.Output )
                         {
@@ -995,6 +1011,13 @@ namespace Detox.FlowChart
                      }
                   }
                }
+
+               // Released on empty canvas: offer to create a node connected to this socket
+               if ( false == overNode && null == createdLink )
+               {
+                  droppedLinkNode   = m_StartLinkNode;
+                  droppedLinkAnchor = m_LinkStartAnchor;
+               }
             }
 
             m_StartLinkNode = null;
@@ -1002,6 +1025,11 @@ namespace Detox.FlowChart
             if ( null != createdLink )
             {
                OnLinkCreated( createdLink );
+            }
+
+            if ( null != droppedLinkNode && null != LinkDroppedOnCanvas )
+            {
+               LinkDroppedOnCanvas( droppedLinkNode, droppedLinkAnchor );
             }
 
             OnNodesModified( modifiedNodes.ToArray( ) );

@@ -2526,6 +2526,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.LinkCreated       -= FlowchartLinkCreated;
          m_FlowChart.PointRender       -= FlowchartPointRender;
          m_FlowChart.LocationChanged   -= FlowchartLocationChanged;
+         m_FlowChart.LinkDroppedOnCanvas -= FlowchartLinkDroppedOnCanvas;
 
          m_PropertyGrid.PropertyValueChanged -= new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }
@@ -2537,6 +2538,7 @@ namespace Detox.ScriptEditor
          m_FlowChart.LinkCreated       += FlowchartLinkCreated;
          m_FlowChart.PointRender       += FlowchartPointRender;
          m_FlowChart.LocationChanged   += FlowchartLocationChanged;
+         m_FlowChart.LinkDroppedOnCanvas += FlowchartLinkDroppedOnCanvas;
 
          m_PropertyGrid.PropertyValueChanged += new PropertyValueChangedEventHandler(m_PropertyGrid_PropertyValueChanged);
       }

@@ -3605,6 +3605,38 @@ namespace Detox.ScriptEditor
          }
       }
       
+      /// <summary>
+      /// Verifies a link to a node that is not part of the graph yet (used to filter Quick Add when a link is
+      /// dropped on empty canvas). The candidate is added only for the duration of the check.
+      /// </summary>
+      public bool VerifyLinkWithCandidate( LinkNode link, EntityNode candidate, out string reason )
+      {
+         bool added = false;
+
+         if ( false == m_Nodes.Contains(candidate.Guid) )
+         {
+            m_Nodes.Add( candidate );
+            added = true;
+         }
+
+         try
+         {
+            return VerifyLink( link, out reason );
+         }
+         catch ( Exception e )
+         {
+            reason = e.Message;
+            return false;
+         }
+         finally
+         {
+            if ( true == added )
+            {
+               m_Nodes.Remove( candidate.Guid );
+            }
+         }
+      }
+
       public bool VerifyLink( LinkNode link, out string reason )
       {
          reason = "";
