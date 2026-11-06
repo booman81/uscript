@@ -90,8 +90,5 @@ scripts no longer recompiles uScript.
 * Minimap in the bottom-right corner: click or drag to move the view, M to show/hide.
 * Reroute points: double-click a link to add a point (drag it), double-click a point to
   remove it. Saved in the graph; older graphs open unchanged.
-* Make Nested Graph from Selection (right-click menu): moves the selected nodes into a new
-  graph with External Connections and replaces them with the new nested node after Unity
-  compiles it.
 * Removed: the update check, license/promotion/welcome windows and other features that
   depended on the old Detox Studios servers. Help > User Guide opens the bundled PDF.

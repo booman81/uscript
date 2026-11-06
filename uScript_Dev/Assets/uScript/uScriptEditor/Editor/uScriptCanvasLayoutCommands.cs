@@ -153,11 +153,6 @@ public sealed partial class uScript
       menu.AddItem(new GUIContent(prefix + (selected > 0 ? "Frame Selected  (F)" : "Frame All  (F)")), false, this.CommandCanvasFrameSelected);
       menu.AddItem(new GUIContent(prefix + "Frame All  (A)"), false, this.CommandCanvasFrameAll);
 
-      if (selected > 0)
-      {
-         menu.AddItem(new GUIContent(prefix + "Make Nested Graph from Selection..."), false, this.CommandMakeNestedGraph);
-      }
-
       var hasReroutes = m_ScriptEditorCtrl != null
          && m_ScriptEditorCtrl.FlowChart.SelectedLinks.Any(link => link.RoutePoints != null && link.RoutePoints.Length > 0);
       if (hasReroutes)

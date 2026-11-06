@@ -556,7 +556,10 @@ namespace Detox.FlowChart
 
          for ( int segment = 0; segment < route.Length - 1; segment++ )
          {
-            if ( true == InBezier(route[segment], route[segment + 1], position, toleranceSq) )
+            PointF control1, control2;
+            LinkRoute.SegmentControls( route, segment, out control1, out control2 );
+
+            if ( true == InBezier(route[segment], route[segment + 1], control1, control2, position, toleranceSq) )
             {
                return segment;
             }
@@ -579,11 +582,8 @@ namespace Detox.FlowChart
          return HitLinkSegment( link, start, end, position, toleranceSq );
       }
 
-      private static bool InBezier( PointF start, PointF end, Point position, float toleranceSq )
+      private static bool InBezier( PointF start, PointF end, PointF control1, PointF control2, Point position, float toleranceSq )
       {
-         PointF control1, control2;
-         LinkRoute.Controls( start, end, out control1, out control2 );
-
          float deltaX = end.X - start.X;
          float deltaY = end.Y - start.Y;
          float length = (float) Math.Sqrt( deltaX * deltaX + deltaY * deltaY );
@@ -1837,7 +1837,7 @@ namespace Detox.FlowChart
                PointF segStart = route[ segment ];
                PointF segEnd   = route[ segment + 1 ];
                PointF control1, control2;
-               LinkRoute.Controls( segStart, segEnd, out control1, out control2 );
+               LinkRoute.SegmentControls( route, segment, out control1, out control2 );
 
                float segDX = segEnd.X - segStart.X;
                float segDY = segEnd.Y - segStart.Y;
@@ -2076,6 +2076,50 @@ namespace Detox.FlowChart
          path[ count + 1 ] = end;
 
          return path;
+      }
+
+      /// <summary>
+      /// Control points for one piece of a link. A link without reroute points keeps uScript's usual curve; with
+      /// reroute points the pieces form one smooth curve through every point (Catmull-Rom style tangents).
+      /// </summary>
+      public static void SegmentControls( PointF[] route, int segment, out PointF control1, out PointF control2 )
+      {
+         PointF a = route[ segment ];
+         PointF b = route[ segment + 1 ];
+
+         if ( route.Length <= 2 )
+         {
+            Controls( a, b, out control1, out control2 );
+            return;
+         }
+
+         PointF tangentA = Tangent( route, segment );
+         PointF tangentB = Tangent( route, segment + 1 );
+
+         control1 = new PointF( a.X + tangentA.X / 3.0f, a.Y + tangentA.Y / 3.0f );
+         control2 = new PointF( b.X - tangentB.X / 3.0f, b.Y - tangentB.Y / 3.0f );
+      }
+
+      /// <summary>Direction (and strength) of the curve at a point of the route.</summary>
+      private static PointF Tangent( PointF[] route, int index )
+      {
+         int last = route.Length - 1;
+
+         if ( index == 0 || index == last )
+         {
+            // Sockets: leave and enter horizontally, like normal links, as strong as the distance to the next point
+            PointF from = index == 0 ? route[0] : route[last - 1];
+            PointF to   = index == 0 ? route[1] : route[last];
+            float dx = to.X - from.X;
+            float dy = to.Y - from.Y;
+            float length = (float) Math.Sqrt( dx * dx + dy * dy );
+            float direction = dx >= 0 ? 1.0f : -1.0f;
+            return new PointF( direction * length, 0 );
+         }
+
+         PointF previous = route[ index - 1 ];
+         PointF next     = route[ index + 1 ];
+         return new PointF( (next.X - previous.X) * 0.5f, (next.Y - previous.Y) * 0.5f );
       }
 
       /// <summary>Bezier control points uScript uses for links (unchanged for links without reroute points).</summary>
