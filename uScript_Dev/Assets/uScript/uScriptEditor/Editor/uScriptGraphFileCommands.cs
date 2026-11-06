@@ -90,23 +90,33 @@ public sealed partial class uScript
          return false;
       }
 
-      // Other graphs that contain this graph as a nested node refer to it by name, so they would break.
-      var parentGraphs = this.FindGraphsUsingGraph(oldName);
-      if (parentGraphs.Count > 0)
+      // Other graphs that use this graph (as a nested graph, or through its component) refer to it by
+      // name. They are updated to the new name after the rename.
+      var dependentGraphs = this.FindGraphsUsingGraph(oldName);
+      if (dependentGraphs.Count > 0)
       {
-         EditorUtility.DisplayDialog(
+         var proceed = EditorUtility.DisplayDialog(
             "Rename Graph",
             string.Format(
-               "\"{0}\" is used by these graphs (as a nested graph, or through its component's variables, events or properties):\n\n{1}\n\nThey refer to it by name, so renaming it would stop your project from compiling. Remove those nodes from them first, rename it, then add them back.",
+               "\"{0}\" is used by these graphs (as a nested graph, or through its component's variables, events or properties):\n\n{1}\n\nThey will be updated to use the new name.",
                oldName,
-               FormatList(parentGraphs)),
-            "OK");
-         return false;
+               FormatList(dependentGraphs.Keys.ToList())),
+            "Rename and Update",
+            "Cancel");
+
+         if (!proceed)
+         {
+            return false;
+         }
       }
 
-      // The open graph must be saved first, otherwise the rename would lose its unsaved changes
+      // The open graph must be saved first, otherwise the rename would lose its unsaved changes, or
+      // (if it uses the renamed graph) saving it later would bring back the old name.
       var isOpenGraph = this.IsOpenGraph(graphPath);
-      if (isOpenGraph && !this.WasCurrentGraphSaved(true))
+      var openGraphPath = this.fullPath;
+      var openGraphIsDependent = !string.IsNullOrEmpty(openGraphPath)
+         && dependentGraphs.ContainsKey(Path.GetFileNameWithoutExtension(openGraphPath));
+      if ((isOpenGraph || openGraphIsDependent) && !this.WasCurrentGraphSaved(true))
       {
          return false;
       }
@@ -155,11 +165,34 @@ public sealed partial class uScript
          AssetDatabase.StopAssetEditing();
       }
 
+      // Point the graphs that use the renamed graph at the new class names
+      var failedUpdates = new List<string>();
+      foreach (var dependent in dependentGraphs)
+      {
+         if (!this.UpdateGraphReferences(dependent.Key, dependent.Value, oldName, newName))
+         {
+            failedUpdates.Add(dependent.Key);
+         }
+      }
+
       this.RefreshAfterGraphFileChange();
 
       if (isOpenGraph)
       {
          this.OpenGraph(newGraphPath, false);
+      }
+      else if (openGraphIsDependent)
+      {
+         this.OpenGraph(openGraphPath, false);
+      }
+
+      if (failedUpdates.Count > 0)
+      {
+         EditorUtility.DisplayDialog(
+            "Rename Graph",
+            "The graph was renamed, but these graphs could not be updated automatically:\n\n" + FormatList(failedUpdates)
+            + "\n\nOpen them and replace the nodes that use the renamed graph.",
+            "OK");
       }
 
       uScriptDebug.Log(string.Format("Renamed graph \"{0}\" to \"{1}\".", oldName, newName));
@@ -185,7 +218,7 @@ public sealed partial class uScript
 
       // Nested usage would leave other graphs' generated code referring to a class that no longer exists,
       // which stops the whole project from compiling.
-      var parentGraphs = this.FindGraphsUsingGraph(graphName);
+      var parentGraphs = this.FindGraphsUsingGraph(graphName).Keys.ToList();
       if (parentGraphs.Count > 0)
       {
          EditorUtility.DisplayDialog(
@@ -254,15 +287,15 @@ public sealed partial class uScript
    }
 
    /// <summary>
-   /// Returns the names of graphs whose generated code uses the given graph, either as a nested node
-   /// (class "Name") or through its component (class "Name_Component", e.g. reading its variables or
-   /// listening to its events). Those graphs refer to the classes by name.
+   /// Finds the graphs whose generated code uses the given graph, either as a nested node (class "Name")
+   /// or through its component (class "Name_Component", e.g. reading its variables or listening to its
+   /// events). Those graphs refer to the classes by name.
    /// </summary>
-   private List<string> FindGraphsUsingGraph(string graphName)
+   /// <returns>Graph name -> the generated script files of that graph that mention the given graph.</returns>
+   private Dictionary<string, List<string>> FindGraphsUsingGraph(string graphName)
    {
-      var result = new List<string>();
-      var pattern = new Regex(
-         @"\b(" + Regex.Escape(graphName) + "|" + Regex.Escape(graphName + uScriptConfig.Files.GeneratedComponentExtension) + @")\b");
+      var result = new Dictionary<string, List<string>>();
+      var pattern = GraphClassNamePattern(graphName);
       var ownFiles = new[] { graphName + ".cs", graphName + uScriptConfig.Files.GeneratedComponentExtension + ".cs" };
 
       foreach (var file in GetFilePathsWithLabel("uScriptCode"))
@@ -294,13 +327,245 @@ public sealed partial class uScript
             name = name.Substring(0, name.Length - uScriptConfig.Files.GeneratedComponentExtension.Length);
          }
 
-         if (!result.Contains(name))
+         List<string> files;
+         if (!result.TryGetValue(name, out files))
          {
-            result.Add(name);
+            files = new List<string>();
+            result[name] = files;
          }
+
+         files.Add(file);
       }
 
       return result;
+   }
+
+   /// <summary>Matches the graph's two class names ("Name" and "Name_Component") as whole identifiers.</summary>
+   private static Regex GraphClassNamePattern(string graphName)
+   {
+      // The component name is listed first so it wins over the shorter graph name
+      return new Regex(
+         @"\b(" + Regex.Escape(graphName + uScriptConfig.Files.GeneratedComponentExtension) + "|" + Regex.Escape(graphName) + @")\b");
+   }
+
+   /// <summary>
+   /// Updates a graph that uses a renamed graph: the class names stored in its nodes (saved .uscript data) and
+   /// in its generated code. The generated code is patched directly so the project compiles straight away;
+   /// it is regenerated the next time the graph is saved.
+   /// </summary>
+   private bool UpdateGraphReferences(string graphName, List<string> generatedFiles, string oldName, string newName)
+   {
+      var ok = true;
+      var component = uScriptConfig.Files.GeneratedComponentExtension;
+
+      // 1. Generated code
+      var pattern = GraphClassNamePattern(oldName);
+      foreach (var file in generatedFiles)
+      {
+         try
+         {
+            var bytes = File.ReadAllBytes(file);
+            var hasBom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+            var text = new UTF8Encoding(false).GetString(bytes, hasBom ? 3 : 0, bytes.Length - (hasBom ? 3 : 0));
+
+            var updated = pattern.Replace(text, match => match.Value == oldName + component ? newName + component : newName);
+            if (updated != text)
+            {
+               File.WriteAllText(file, updated, new UTF8Encoding(hasBom));
+            }
+         }
+         catch (Exception e)
+         {
+            uScriptDebug.Log(string.Format("Rename Graph: could not update {0}: {1}", file, e.Message), uScriptDebug.Type.Warning);
+            ok = false;
+         }
+      }
+
+      // 2. Saved graph data
+      var graphPath = GetGraphPath(graphName + ".uscript");
+      if (string.IsNullOrEmpty(graphPath) || !File.Exists(graphPath))
+      {
+         uScriptDebug.Log(string.Format("Rename Graph: could not find the graph file for \"{0}\".", graphName), uScriptDebug.Type.Warning);
+         return false;
+      }
+
+      try
+      {
+         var reader = new ScriptEditor(string.Empty, null, null);
+         if (!reader.Open(graphPath))
+         {
+            uScriptDebug.Log(string.Format("Rename Graph: could not open {0}.", graphPath), uScriptDebug.Type.Warning);
+            return false;
+         }
+
+         var data = reader.ScriptEditorData;
+         var changed = false;
+
+         Func<string, string> rename = value => RenameTypeName(value, oldName, newName);
+         foreach (var nodeData in data.NodeDatas)
+         {
+            RewriteTypeNames(nodeData, null, rename, ref changed, 0);
+
+            // A nested graph node shows the graph's name unless a friendly name was set
+            var logicNode = nodeData as Detox.Data.ScriptEditor.LogicNodeData;
+            if (logicNode != null && logicNode.FriendlyName == oldName)
+            {
+               logicNode.FriendlyName = newName;
+               changed = true;
+            }
+         }
+
+         if (changed)
+         {
+            // The data setter adds nodes, so load it into a fresh editor before writing it back out.
+            // ToBase64(path) also refreshes uScript's in-memory cache of this graph.
+            var writer = new ScriptEditor(string.Empty, null, null);
+            writer.ScriptEditorData = data;
+
+            var base64 = writer.ToBase64(graphPath);
+            File.WriteAllText(graphPath, "/*[[BEGIN BASE64\r\n" + base64 + "\r\nEND BASE64]]*/");
+         }
+      }
+      catch (Exception e)
+      {
+         uScriptDebug.Log(string.Format("Rename Graph: could not update {0}: {1}", graphPath, e.Message), uScriptDebug.Type.Warning);
+         ok = false;
+      }
+
+      return ok;
+   }
+
+   // Fields of the graph data that hold class names
+   private static readonly HashSet<string> TypeNameFields = new HashSet<string> { "Type", "ComponentType", "EventArgs", "AutoLinkType" };
+
+   /// <summary>Renames "Old", "Old_Component" and forms like "Old_Component[]" or "Old+Nested" in a stored type name.</summary>
+   private static string RenameTypeName(string value, string oldName, string newName)
+   {
+      if (string.IsNullOrEmpty(value))
+      {
+         return value;
+      }
+
+      var component = uScriptConfig.Files.GeneratedComponentExtension;
+      var pairs = new[]
+      {
+         new KeyValuePair<string, string>(oldName + component, newName + component),
+         new KeyValuePair<string, string>(oldName, newName)
+      };
+
+      foreach (var pair in pairs)
+      {
+         if (value == pair.Key)
+         {
+            return pair.Value;
+         }
+
+         if (value.StartsWith(pair.Key, StringComparison.Ordinal) && "[+.,<&".IndexOf(value[pair.Key.Length]) >= 0)
+         {
+            return pair.Value + value.Substring(pair.Key.Length);
+         }
+      }
+
+      return value;
+   }
+
+   /// <summary>
+   /// Walks uScript's graph data objects (classes, structs and arrays in the Detox namespaces) and renames
+   /// class names held in the fields listed in TypeNameFields. Returns the (possibly boxed and updated) value.
+   /// </summary>
+   private static object RewriteTypeNames(object value, string fieldName, Func<string, string> rename, ref bool changed, int depth)
+   {
+      if (value == null || depth > 12)
+      {
+         return value;
+      }
+
+      var text = value as string;
+      if (text != null)
+      {
+         if (fieldName != null && TypeNameFields.Contains(fieldName))
+         {
+            var renamed = rename(text);
+            if (renamed != text)
+            {
+               changed = true;
+               return renamed;
+            }
+         }
+
+         return value;
+      }
+
+      var type = value.GetType();
+      if (type.IsPrimitive || type.IsEnum || type == typeof(decimal) || type == typeof(Guid))
+      {
+         return value;
+      }
+
+      var array = value as Array;
+      if (array != null)
+      {
+         for (var i = 0; i < array.Length; i++)
+         {
+            var element = array.GetValue(i);
+            var updated = RewriteTypeNames(element, fieldName, rename, ref changed, depth + 1);
+            if (!ReferenceEquals(element, updated) || (element != null && element.GetType().IsValueType))
+            {
+               array.SetValue(updated, i);
+            }
+         }
+
+         return value;
+      }
+
+      if (type.Namespace == null || !type.Namespace.StartsWith("Detox", StringComparison.Ordinal))
+      {
+         return value;
+      }
+
+      const System.Reflection.BindingFlags Flags =
+         System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public
+         | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.DeclaredOnly;
+
+      for (var t = type; t != null && t != typeof(object) && t != typeof(ValueType); t = t.BaseType)
+      {
+         foreach (var field in t.GetFields(Flags))
+         {
+            if (field.IsLiteral || field.IsInitOnly)
+            {
+               continue;
+            }
+
+            var fieldValue = field.GetValue(value);
+            if (fieldValue == null || (fieldValue.GetType().IsPrimitive || fieldValue.GetType().IsEnum))
+            {
+               continue;
+            }
+
+            var updated = RewriteTypeNames(fieldValue, CleanFieldName(field.Name), rename, ref changed, depth + 1);
+            if (!ReferenceEquals(fieldValue, updated) || fieldValue.GetType().IsValueType)
+            {
+               field.SetValue(value, updated);
+            }
+         }
+      }
+
+      return value;
+   }
+
+   /// <summary>"&lt;Type&gt;k__BackingField" -> "Type"</summary>
+   private static string CleanFieldName(string name)
+   {
+      if (name.StartsWith("<", StringComparison.Ordinal))
+      {
+         var end = name.IndexOf('>');
+         if (end > 1)
+         {
+            return name.Substring(1, end - 1);
+         }
+      }
+
+      return name;
    }
 
    /// <summary>
