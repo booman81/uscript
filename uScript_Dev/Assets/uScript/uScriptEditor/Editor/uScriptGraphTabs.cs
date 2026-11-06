@@ -293,7 +293,7 @@ public sealed partial class uScript
       var index = this.FindGraphTab(path);
       var current = this.ActiveGraphTab;
 
-      if (current != null && index == this.activeGraphTab)
+      if (current != null && index == this.activeGraphTab && SameGraphPath(path, this.fullPath))
       {
          // Opening the graph that is already showing: keep it as it is (unsaved changes included)
          if (m_ScriptEditorCtrl != null && m_ScriptEditorCtrl.IsDirty)
@@ -323,9 +323,60 @@ public sealed partial class uScript
 
    private void ActivateGraphTab(GraphTab tab)
    {
-      var index = this.graphTabs.IndexOf(tab);
-      if (index < 0 || index == this.activeGraphTab)
+      try
       {
+         this.ActivateGraphTabNow(tab);
+      }
+      finally
+      {
+         this.RefreshAfterTabChange();
+      }
+   }
+
+   /// <summary>
+   /// Tab actions run from EditorApplication.delayCall, outside OnGUI, so nothing would redraw the window until the
+   /// mouse moves; ask for a couple of redraws so the new graph (and the tab bar) show straight away.
+   /// </summary>
+   private void RefreshAfterTabChange()
+   {
+      if (m_ScriptEditorCtrl != null)
+      {
+         m_ScriptEditorCtrl.FlowChart.Invalidate();
+      }
+
+      RequestRepaint(3);
+      this.Repaint();
+   }
+
+   private bool IsShowing(GraphTab tab)
+   {
+      return string.IsNullOrEmpty(tab.Path)
+         ? string.IsNullOrEmpty(this.fullPath)
+         : SameGraphPath(tab.Path, this.fullPath);
+   }
+
+   private void ActivateGraphTabNow(GraphTab tab)
+   {
+      var index = this.graphTabs.IndexOf(tab);
+      if (index < 0)
+      {
+         return;
+      }
+
+      if (index == this.activeGraphTab)
+      {
+         if (m_ScriptEditorCtrl != null && this.IsShowing(tab))
+         {
+            return;   // already showing
+         }
+
+         // The tab is marked active but another graph is showing: load it again from file
+         this.activeGraphTab = -1;
+         if (!string.IsNullOrEmpty(tab.Path) && File.Exists(tab.Path))
+         {
+            this.OpenGraph(tab.Path, false);
+         }
+
          return;
       }
 
@@ -352,6 +403,18 @@ public sealed partial class uScript
    }
 
    private void CloseGraphTab(GraphTab tab)
+   {
+      try
+      {
+         this.CloseGraphTabNow(tab);
+      }
+      finally
+      {
+         this.RefreshAfterTabChange();
+      }
+   }
+
+   private void CloseGraphTabNow(GraphTab tab)
    {
       var index = this.graphTabs.IndexOf(tab);
       if (index < 0)
@@ -710,7 +773,11 @@ public sealed partial class uScript
 
          if (GUILayout.Button(new GUIContent("+", "New graph in a new tab"), EditorStyles.toolbarButton, GUILayout.Width(22)))
          {
-            EditorApplication.delayCall += FileMenuItem_New;
+            EditorApplication.delayCall += () =>
+            {
+               FileMenuItem_New();
+               this.RefreshAfterTabChange();
+            };
          }
       }
 
