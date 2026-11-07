@@ -2769,6 +2769,12 @@ public sealed partial class uScript : EditorWindow
 
       AssetDatabase.Refresh();
 
+      // Play waits for this code to be compiled (see uScriptPlayModeGuard)
+      if (changedFiles.Any(file => file.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)))
+      {
+         uScriptPlayModeGuard.MarkCodeChanged();
+      }
+
       if (quick)
       {
          uScriptDebug.Log(
