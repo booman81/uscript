@@ -330,6 +330,10 @@ namespace Detox.Editor.GUI
             EditorGUILayout.EndHorizontal();
          }
 
+         private static readonly GUIContent SaveAndPlayContent = new GUIContent(
+            "Save & Play",
+            "Save the graph with generated code (Release, or Debug when that is the save method) and start the game as soon as Unity has compiled it.");
+
          private void DrawToolbarButtons()
          {
             var uScriptInstance = uScript.WeakInstance;
@@ -351,6 +355,22 @@ namespace Detox.Editor.GUI
                      Preferences.SaveMethod == Preferences.SaveMethodType.Quick,
                      Preferences.SaveMethod == Preferences.SaveMethodType.Debug,
                      false, false);
+               }
+
+               // Save and start the game when Unity has compiled the code
+               using (new EditorGUI.DisabledScope(EditorApplication.isPlayingOrWillChangePlaymode))
+               {
+                  if (GUILayout.Button(SaveAndPlayContent, EditorStyles.toolbarButton, GUILayout.Width(EditorStyles.toolbarButton.CalcSize(SaveAndPlayContent).x)))
+                  {
+                     // After this GUI event, so the save and Play don't run in the middle of drawing the panel
+                     EditorApplication.delayCall += () =>
+                     {
+                        if (uScript.WeakInstance != null)
+                        {
+                           uScript.WeakInstance.CommandSaveAndPlay();
+                        }
+                     };
+                  }
                }
 
                // Miscellaneous file commands

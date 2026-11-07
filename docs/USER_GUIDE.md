@@ -89,6 +89,15 @@ Right-click a graph in the graph list, or use the **File** menu for the open gra
 - **Delete Graph** moves the graph and its generated code to the trash. A graph that other graphs still use can't be
   deleted. uScript tells you which graphs use it.
 
+### Save & Play
+
+**Save & Play**, next to the Save button in the Current Graph panel (also **File > Save and Play**), saves the graph
+with generated code and starts the game as soon as Unity has compiled it. One click instead of save, wait, Play.
+It saves as Release, or as Debug when Debug is your chosen save method.
+
+Pressing Play yourself right after saving also waits for the new code to compile first, so the game never runs the
+previous version (this matters when **Enter Play Mode Options** has **Reload Domain** turned off).
+
 ### New custom nodes appear immediately
 
 When you add or change a custom node in `uScriptProjectFiles/Nodes`, it shows up in the Toolbox after Unity

@@ -52,6 +52,35 @@ public static class uScriptPlayModeGuard
       SessionState.SetFloat(AwaitingSinceKey, (float)EditorApplication.timeSinceStartup);
    }
 
+   /// <summary>
+   /// Starts Play as soon as the code uScript just saved is compiled and loaded (right away when nothing has to
+   /// be compiled). Used by "Save &amp; Play".
+   /// </summary>
+   public static void PlayWhenReady()
+   {
+      if (EditorApplication.isPlayingOrWillChangePlaymode)
+      {
+         return;
+      }
+
+      if (CodeAwaitingCompile || EditorApplication.isCompiling)
+      {
+         SessionState.SetBool(PlayAfterCompileKey, true);
+         SessionState.SetFloat(PlayRequestedAtKey, (float)EditorApplication.timeSinceStartup);
+         SessionState.SetBool(CompileStartedKey, EditorApplication.isCompiling);
+         Debug.Log("uScript: Play starts when the saved graph code has finished compiling.");
+         return;
+      }
+
+      EditorApplication.delayCall += () =>
+      {
+         if (!EditorApplication.isPlayingOrWillChangePlaymode)
+         {
+            EditorApplication.isPlaying = true;
+         }
+      };
+   }
+
    private static bool CodeAwaitingCompile
    {
       get { return SessionState.GetBool(AwaitingCompileKey, false); }

@@ -90,6 +90,8 @@ scripts no longer recompiles uScript.
   all nodes (also in the right-click and View menus). The mouse wheel and the -/= keys
   zoom toward the mouse.
 * Sockets are easier to hit and highlight when the mouse is over them.
+* Save & Play button (Current Graph panel, File > Save and Play): saves with code and starts
+  the game once Unity has compiled it. Play also waits for freshly saved code to compile.
 * Drag a link onto empty canvas: Quick Add opens with only the nodes that can connect to
   that socket, and the chosen node is placed and connected. Off by default; turn on
   "Quick Add on Link Drop" in the uScript Preferences (Node Settings).

@@ -3006,6 +3006,29 @@ public sealed partial class uScript : EditorWindow
       return saved;
    }
 
+   /// <summary>
+   /// Save &amp; Play: saves with generated code (Debug when that is the chosen save method, otherwise Release) and
+   /// starts the game as soon as Unity has compiled it.
+   /// </summary>
+   public void CommandSaveAndPlay()
+   {
+      if (EditorApplication.isPlayingOrWillChangePlaymode)
+      {
+         return;
+      }
+
+      var debug = Preferences.SaveMethod == Preferences.SaveMethodType.Debug;
+      if (this.RequestSave(false, debug, false, false))
+      {
+         uScriptPlayModeGuard.PlayWhenReady();
+      }
+   }
+
+   public static void FileMenuItem_SaveAndPlay()
+   {
+      Instance.CommandSaveAndPlay();
+   }
+
    public static void FileMenuItem_Save()
    {
       Instance.RequestSave(
@@ -3265,6 +3288,7 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveQuick, false, FileMenuItem_QuickSave);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveDebug, false, FileMenuItem_DebugSave);
       menu.AddItem(uScriptGUIContent.FileMenuItemSaveRelease, false, FileMenuItem_ReleaseSave);
+      menu.AddItem(new GUIContent("Save and Play"), false, FileMenuItem_SaveAndPlay);
       menu.AddSeparator(string.Empty);
       menu.AddItem(uScriptGUIContent.FileMenuItemGenerateNodes, false, FileMenuItem_GenerateNodes);
       menu.AddSeparator(string.Empty);
