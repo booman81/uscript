@@ -91,7 +91,8 @@ scripts no longer recompiles uScript.
   zoom toward the mouse.
 * Sockets are easier to hit and highlight when the mouse is over them.
 * Drag a link onto empty canvas: Quick Add opens with only the nodes that can connect to
-  that socket, and the chosen node is placed and connected.
+  that socket, and the chosen node is placed and connected. Off by default; turn on
+  "Quick Add on Link Drop" in the uScript Preferences (Node Settings).
 * Graph tabs: several graphs open at once. Unsaved changes stay in their tab when you
   switch; closing a changed tab asks to save. Middle-click or x closes, right-click for more.
 * Minimap in the bottom-right corner: click or drag to move the view, M to show/hide.

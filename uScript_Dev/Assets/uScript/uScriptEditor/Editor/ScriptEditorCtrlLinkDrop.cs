@@ -14,6 +14,7 @@ namespace Detox.ScriptEditor
    using System.Collections.Generic;
 
    using Detox.Drawing;
+   using Detox.Editor;
    using Detox.FlowChart;
 
    /// <summary>The socket a link was dragged from when it was dropped on empty canvas.</summary>
@@ -50,7 +51,7 @@ namespace Detox.ScriptEditor
       private void FlowchartLinkDroppedOnCanvas(Detox.FlowChart.Node node, AnchorPoint anchor)
       {
          var displayNode = node as DisplayNode;
-         if (displayNode == null)
+         if (displayNode == null || !Preferences.QuickAddOnLinkDrop)
          {
             return;
          }

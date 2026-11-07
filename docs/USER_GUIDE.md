@@ -108,6 +108,8 @@ Press **Space** on the canvas, or right-click and choose **Search Nodes... (Spac
 
 ### Drag a link onto empty canvas
 
+This is off by default. Turn it on with **Quick Add on Link Drop** in the uScript Preferences (Node Settings).
+
 Start a link from any socket and release it on an empty part of the canvas. Quick Add opens with **only the nodes
 that can connect to that socket**. When the socket is a value, matching variables are listed first. The node you
 choose is placed with its socket under the mouse and already connected. One **Ctrl+Z** removes both the node and the link.

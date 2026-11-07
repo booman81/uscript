@@ -197,6 +197,9 @@ namespace Detox.Editor.GUI.Windows
             (Detox.Editor.Preferences.VariableExpansionType)
             EditorGUILayout.EnumPopup("Variable Expansion Mode", Preferences.VariableExpansion);
          Preferences.GridSnap = EditorGUILayout.Toggle("Snap to Grid", Preferences.GridSnap);
+         Preferences.QuickAddOnLinkDrop = EditorGUILayout.Toggle(
+            new GUIContent("Quick Add on Link Drop", "Releasing a link on empty canvas opens Quick Add with the nodes that can connect to it, and connects the chosen node."),
+            Preferences.QuickAddOnLinkDrop);
          Preferences.LineWidthMultiplier = EditorGUILayout.FloatField("Connector Line Width", Preferences.LineWidthMultiplier);
          Preferences.LineSelectionTolerance = EditorGUILayout.FloatField("Line Selection Tolerance", Preferences.LineSelectionTolerance);
 

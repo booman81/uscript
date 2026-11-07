@@ -218,6 +218,13 @@ namespace Detox.Editor
          set { EditorPrefs.SetBool("DetoxStudios.uScript.GridSnap", value); }
       }
 
+      /// <summary>Releasing a dragged link on empty canvas opens Quick Add with the nodes that can connect (off by default).</summary>
+      public static bool QuickAddOnLinkDrop
+      {
+         get { return EditorPrefs.GetBool("DetoxStudios.uScript.QuickAddOnLinkDrop", false); }
+         set { EditorPrefs.SetBool("DetoxStudios.uScript.QuickAddOnLinkDrop", value); }
+      }
+
       public static bool ShowAllHotkeys
       {
          get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowAllHotkeys"); }
