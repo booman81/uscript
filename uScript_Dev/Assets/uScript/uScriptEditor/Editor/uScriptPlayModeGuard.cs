@@ -10,6 +10,12 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.IO;
+using System.Linq;
+
+using Detox.Editor;
+
 using UnityEditor;
 using UnityEditor.Compilation;
 
@@ -23,12 +29,16 @@ public static class uScriptPlayModeGuard
    private const string PlayAfterCompileKey = "uScript.PlayAfterCompile";
    private const string PlayRequestedAtKey = "uScript.PlayRequestedAt";
    private const string CompileStartedKey = "uScript.PlayGuardCompileStarted";
+   private const string LastReloadKey = "uScript.LastAssemblyReloadUtcTicks";
 
    // If Unity doesn't start compiling within this many seconds after Play was held back, play anyway
    private const float StartTimeout = 4f;
 
    static uScriptPlayModeGuard()
    {
+      // This runs after every script reload: generated code written after this moment isn't loaded yet
+      SessionState.SetString(LastReloadKey, DateTime.UtcNow.Ticks.ToString());
+
       EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
       EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
 
@@ -93,9 +103,21 @@ public static class uScriptPlayModeGuard
          return;
       }
 
-      if (!CodeAwaitingCompile && !EditorApplication.isCompiling)
+      var newerFiles = GeneratedScriptsNewerThanLastReload();
+
+      if (!CodeAwaitingCompile && !EditorApplication.isCompiling && newerFiles.Length == 0)
       {
          return;
+      }
+
+      // Make sure Unity picks up generated scripts written since the last reload, however they were saved
+      foreach (var file in newerFiles)
+      {
+         var assetPath = file.RelativeAssetPath();
+         if (assetPath.StartsWith("Assets", StringComparison.OrdinalIgnoreCase))
+         {
+            AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+         }
       }
 
       // Hold Play until the new graph code is compiled and loaded
@@ -116,6 +138,34 @@ public static class uScriptPlayModeGuard
    private static void OnCompilationStarted(object context)
    {
       SessionState.SetBool(CompileStartedKey, true);
+   }
+
+   /// <summary>Generated graph scripts changed on disk since the scripts were last loaded.</summary>
+   private static string[] GeneratedScriptsNewerThanLastReload()
+   {
+      try
+      {
+         long ticks;
+         if (!long.TryParse(SessionState.GetString(LastReloadKey, string.Empty), out ticks))
+         {
+            return new string[0];
+         }
+
+         var lastReload = new DateTime(ticks, DateTimeKind.Utc);
+
+         return new[] { Preferences.GeneratedScripts, Preferences.NestedScripts }
+            .Where(folder => !string.IsNullOrEmpty(folder) && Directory.Exists(folder))
+            .Select(folder => folder.Replace('\\', '/').TrimEnd('/'))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .SelectMany(folder => Directory.GetFiles(folder, "*.cs", SearchOption.AllDirectories))
+            .Where(file => File.GetLastWriteTimeUtc(file) > lastReload)
+            .Select(file => file.Replace('\\', '/'))
+            .ToArray();
+      }
+      catch (Exception)
+      {
+         return new string[0];
+      }
    }
 
    private static void OnAfterAssemblyReload()
