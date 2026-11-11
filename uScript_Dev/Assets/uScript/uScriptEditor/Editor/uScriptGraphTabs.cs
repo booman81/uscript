@@ -267,7 +267,9 @@ public sealed partial class uScript
       }
 
       tab.Dirty = m_ScriptEditorCtrl.IsDirty;
-      tab.ScriptName = m_ScriptEditorCtrl.ScriptEditor.Name;
+      tab.ScriptName = !string.IsNullOrEmpty(m_ScriptEditorCtrl.ScriptEditor.Name)
+         ? m_ScriptEditorCtrl.ScriptEditor.Name
+         : (string.IsNullOrEmpty(tab.Path) ? string.Empty : System.IO.Path.GetFileName(tab.Path));
       tab.Script = tab.Dirty || string.IsNullOrEmpty(tab.Path) ? m_ScriptEditorCtrl.ScriptEditor.ToBase64(null) : null;
 
       var location = m_ScriptEditorCtrl.FlowChart.Location;
@@ -290,7 +292,9 @@ public sealed partial class uScript
 
       this.fullPath = tab.Path ?? string.Empty;
       this.currentScript = tab.Script;
-      this.currentScriptName = tab.ScriptName;
+      this.currentScriptName = !string.IsNullOrEmpty(tab.ScriptName) || string.IsNullOrEmpty(tab.Path)
+         ? tab.ScriptName
+         : System.IO.Path.GetFileName(tab.Path);
       this.currentScriptDirty = tab.Dirty;
       this.currentCanvasPosition = tab.CanvasPosition;
       this.mapScale = 1.0f;

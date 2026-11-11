@@ -1082,7 +1082,11 @@ public sealed partial class uScript : EditorWindow
       this.patches = new string[0];
       this.currentScript = m_ScriptEditorCtrl.ScriptEditor.ToBase64(null);
       this.currentScriptDirty = m_ScriptEditorCtrl.IsDirty;
-      this.currentScriptName = m_ScriptEditorCtrl.Name;
+      // The graph's own name (the control's Name is always empty). With the empty name, the graph reopened after
+      // every script reload as "(new)".
+      this.currentScriptName = !string.IsNullOrEmpty(m_ScriptEditorCtrl.ScriptEditor.Name)
+         ? m_ScriptEditorCtrl.ScriptEditor.Name
+         : (string.IsNullOrEmpty(this.fullPath) ? string.Empty : Path.GetFileName(this.fullPath));
    }
 
    public static void SetSetting(string key, object value)
