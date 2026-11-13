@@ -37,8 +37,17 @@ public sealed partial class uScript
       /// <summary>Full path of the .uscript file; empty for a graph that was never saved.</summary>
       public string Path = string.Empty;
 
-      /// <summary>Unsaved graph data while the tab is in the background (null = load from file).</summary>
+      /// <summary>Unsaved graph data while the tab is in the background (empty = load from file).</summary>
       public string Script;
+
+      /// <summary>
+      /// True when the tab holds graph data in memory. Unity turns null strings into "" when it reloads scripts,
+      /// so an empty string must count as "nothing cached" too (it used to open an empty graph).
+      /// </summary>
+      public bool HasCachedScript
+      {
+         get { return !string.IsNullOrEmpty(this.Script); }
+      }
 
       public string ScriptName = string.Empty;
       public bool Dirty;
@@ -243,7 +252,7 @@ public sealed partial class uScript
       for (var i = this.graphTabs.Count - 1; i >= 0; i--)
       {
          var tab = this.graphTabs[i];
-         if (i != this.activeGraphTab && tab.Script == null && !string.IsNullOrEmpty(tab.Path) && !File.Exists(tab.Path))
+         if (i != this.activeGraphTab && !tab.HasCachedScript && !string.IsNullOrEmpty(tab.Path) && !File.Exists(tab.Path))
          {
             this.graphTabs.RemoveAt(i);
             if (i < this.activeGraphTab)
@@ -289,6 +298,17 @@ public sealed partial class uScript
    private void ShowCachedGraphTab(int index)
    {
       var tab = this.graphTabs[index];
+
+      if (!tab.HasCachedScript)
+      {
+         // Nothing in memory after all: never show an empty graph for a saved file, open the file instead
+         tab.Script = null;
+         if (!string.IsNullOrEmpty(tab.Path) && File.Exists(tab.Path))
+         {
+            this.OpenGraph(tab.Path, false);
+            return;
+         }
+      }
 
       this.fullPath = tab.Path ?? string.Empty;
       this.currentScript = tab.Script;
@@ -345,7 +365,7 @@ public sealed partial class uScript
          return false;
       }
 
-      if (index >= 0 && this.graphTabs[index].Script != null)
+      if (index >= 0 && this.graphTabs[index].HasCachedScript)
       {
          this.ShowCachedGraphTab(index);
          return true;
@@ -417,7 +437,7 @@ public sealed partial class uScript
          return;
       }
 
-      if (tab.Script != null)
+      if (tab.HasCachedScript)
       {
          this.StashCurrentGraphIntoTab();
          this.ShowCachedGraphTab(index);
@@ -461,7 +481,7 @@ public sealed partial class uScript
 
       if (index != this.activeGraphTab)
       {
-         if (tab.Dirty && tab.Script != null)
+         if (tab.Dirty && tab.HasCachedScript)
          {
             if (string.IsNullOrEmpty(tab.Path))
             {
@@ -523,7 +543,7 @@ public sealed partial class uScript
    {
       var tab = this.graphTabs[index];
 
-      if (tab.Script != null)
+      if (tab.HasCachedScript)
       {
          this.ShowCachedGraphTab(index);
       }
@@ -662,7 +682,7 @@ public sealed partial class uScript
       for (var i = 0; i < this.graphTabs.Count; i++)
       {
          var tab = this.graphTabs[i];
-         if (i != this.activeGraphTab && tab.Dirty && tab.Script != null && names.Contains(GraphTabName(tab)))
+         if (i != this.activeGraphTab && tab.Dirty && tab.HasCachedScript && names.Contains(GraphTabName(tab)))
          {
             result.Add(GraphTabName(tab));
          }
@@ -728,7 +748,7 @@ public sealed partial class uScript
       for (var i = 0; i < this.graphTabs.Count; i++)
       {
          var tab = this.graphTabs[i];
-         if (i != this.activeGraphTab && tab.Dirty && tab.Script != null && !string.IsNullOrEmpty(tab.Path))
+         if (i != this.activeGraphTab && tab.Dirty && tab.HasCachedScript && !string.IsNullOrEmpty(tab.Path))
          {
             this.AskToSaveBackgroundTab(tab, false);
          }
