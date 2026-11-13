@@ -1485,6 +1485,41 @@ namespace Detox.FlowChart
          Location = position;
       }
 
+      private float m_PanRemainderX = 0;
+      private float m_PanRemainderY = 0;
+
+      /// <summary>Moves the view by a mouse movement in screen pixels (used to pan while dragging a link).</summary>
+      public void PanBy( float screenDeltaX, float screenDeltaY )
+      {
+         float zoom = Math.Max( Zoom, 0.1f );
+         m_PanRemainderX += screenDeltaX / zoom;
+         m_PanRemainderY += screenDeltaY / zoom;
+
+         int dx = (int) m_PanRemainderX;
+         int dy = (int) m_PanRemainderY;
+         m_PanRemainderX -= dx;
+         m_PanRemainderY -= dy;
+
+         if ( dx == 0 && dy == 0 ) return;
+
+         Point position = new Point( Location.X + dx, Location.Y + dy );
+
+         //clamp top left
+         if ( position.X > 0 ) position.X = 0;
+         if ( position.Y > 0 ) position.Y = 0;
+
+         //clamp bottom right
+         if ( null != Parent )
+         {
+            if ( position.X + Bounds.Width  < Parent.Bounds.Right  ) position.X += Parent.Bounds.Right  - ( position.X + Bounds.Width);
+            if ( position.Y + Bounds.Height < Parent.Bounds.Bottom ) position.Y += Parent.Bounds.Bottom - ( position.Y + Bounds.Height);
+         }
+
+         Location = position;
+         OnLocationChanged( );
+         Invalidate( );  // Pan while linking
+      }
+
       public void JumpToPoint( Point point )
       {
          Point position = point;

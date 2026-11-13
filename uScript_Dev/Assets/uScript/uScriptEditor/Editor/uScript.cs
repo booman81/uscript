@@ -1764,7 +1764,7 @@ public sealed partial class uScript : EditorWindow
       {
          this.OnGUIHandleContextMenuInput();
       }
-      else if (!this.HandleMinimapInput())
+      else if (!this.HandleMinimapInput() && !this.HandleLinkDragPan())
       {
          this.OnGUIHandleCanvasInput();
       }

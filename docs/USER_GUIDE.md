@@ -148,6 +148,7 @@ choose is placed with its socket under the mouse and already connected. One **Ct
 | Frame all nodes | **A**, or right-click / View menu > **Frame All** |
 | Zoom toward the mouse | Mouse wheel, or **-** / **=** (**0** resets to 100%) |
 | Pan | **Alt+drag** or middle-mouse drag |
+| Pan while dragging a link | Keep the left button down and drag with the **middle** button |
 
 ### Minimap
 

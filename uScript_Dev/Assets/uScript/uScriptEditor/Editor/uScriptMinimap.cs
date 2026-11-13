@@ -191,6 +191,61 @@ public sealed partial class uScript
       EditorGUI.DrawRect(new Rect(r.xMax - 1, r.yMin, 1, r.height), color);
    }
 
+   private bool linkDragPanning;
+   private Vector2 linkDragPanLast;
+
+   /// <summary>
+   /// While a link is being dragged with the left button, the middle button pans the view (so the link can reach
+   /// nodes off screen). Returns True when the event was used.
+   /// </summary>
+   private bool HandleLinkDragPan()
+   {
+      var e = Event.current;
+      if (e == null || m_ScriptEditorCtrl == null)
+      {
+         return false;
+      }
+
+      var flowChart = m_ScriptEditorCtrl.FlowChart;
+
+      if (e.type == EventType.MouseDown && e.button == 2 && flowChart.LinkStartNode != null)
+      {
+         this.linkDragPanning = true;
+         this.linkDragPanLast = e.mousePosition;
+         e.Use();
+         return true;
+      }
+
+      if (!this.linkDragPanning)
+      {
+         return false;
+      }
+
+      if (e.type == EventType.MouseDrag)
+      {
+         // Pan, and still let the canvas follow the mouse with the link end
+         var delta = e.mousePosition - this.linkDragPanLast;
+         this.linkDragPanLast = e.mousePosition;
+         flowChart.PanBy(delta.x, delta.y);
+         this.Repaint();
+         return false;
+      }
+
+      if ((e.type == EventType.MouseUp || e.rawType == EventType.MouseUp) && e.button == 2)
+      {
+         this.linkDragPanning = false;
+         e.Use();
+         return true;
+      }
+
+      if (flowChart.LinkStartNode == null)
+      {
+         this.linkDragPanning = false;   // the link was finished or canceled
+      }
+
+      return false;
+   }
+
    /// <summary>
    /// Handles clicks and drags in the minimap before the canvas sees them. Returns True when the event was used.
    /// </summary>
