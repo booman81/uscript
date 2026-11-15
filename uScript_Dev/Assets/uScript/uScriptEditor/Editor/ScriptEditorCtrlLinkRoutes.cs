@@ -9,6 +9,8 @@
 
 namespace Detox.ScriptEditor
 {
+   using System.Collections.Generic;
+
    using Detox.FlowChart;
 
    public partial class ScriptEditorCtrl
@@ -43,6 +45,52 @@ namespace Detox.ScriptEditor
          var patch = new Patch.EntityNode("Reroute Link", oldLink, newLink);
          uScript.Instance.RegisterUndo(patch);
          OnScriptModified();
+      }
+
+      /// <summary>Selected links plus all links of the selected nodes.</summary>
+      public List<Link> LinksForWirelessCommands()
+      {
+         var result = new List<Link>(m_FlowChart.SelectedLinks);
+
+         foreach (Link link in m_FlowChart.Links)
+         {
+            if (!result.Contains(link) && (link.Source.Node.Selected || link.Destination.Node.Selected))
+            {
+               result.Add(link);
+            }
+         }
+
+         return result;
+      }
+
+      /// <summary>Shows links as two labels (wireless) or as normal cables again. One undo step.</summary>
+      public void SetLinksWireless(IEnumerable<Link> chartLinks, bool wireless)
+      {
+         var batch = new Patch.Batch(wireless ? "Make Links Wireless" : "Show Links as Cables");
+
+         foreach (Link chartLink in chartLinks)
+         {
+            if (!(chartLink.Tag is LinkNode)) continue;
+
+            LinkNode oldLink = (LinkNode)chartLink.Tag;
+            if (oldLink.Wireless == wireless || null == m_ScriptEditor.GetNode(oldLink.Guid)) continue;
+
+            LinkNode newLink = oldLink;
+            newLink.Wireless = wireless;
+
+            m_ScriptEditor.TrustedUpdate(newLink);
+            chartLink.Tag = newLink;
+            chartLink.Wireless = wireless;
+            batch.Add(new Patch.EntityNode("", oldLink, newLink));
+         }
+
+         if (batch.HasPatches)
+         {
+            m_Dirty = true;
+            uScript.Instance.RegisterUndo(batch);
+            OnScriptModified();
+            m_FlowChart.Invalidate();
+         }
       }
 
       /// <summary>Removes all reroute points from the selected links.</summary>

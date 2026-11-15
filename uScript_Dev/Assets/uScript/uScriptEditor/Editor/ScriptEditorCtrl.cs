@@ -1965,6 +1965,7 @@ namespace Detox.ScriptEditor
             Detox.FlowChart.Link chartLink = new Detox.FlowChart.Link( );
             chartLink.Tag = link;
             chartLink.RoutePoints = Detox.FlowChart.LinkRoute.Parse( link.RoutePoints );
+            chartLink.Wireless = link.Wireless;
 
             chartLink.Source.Node   = m_FlowChart.GetNode( link.Source.Guid );
             chartLink.Source.AnchorName = link.Source.Anchor;
@@ -2125,6 +2126,7 @@ namespace Detox.ScriptEditor
             Detox.FlowChart.Link chartLink = new Detox.FlowChart.Link( );
             chartLink.Tag = link;
             chartLink.RoutePoints = Detox.FlowChart.LinkRoute.Parse( link.RoutePoints );
+            chartLink.Wireless = link.Wireless;
 
             chartLink.Source.Node   = m_FlowChart.GetNode( link.Source.Guid );
             chartLink.Source.AnchorName = link.Source.Anchor;
@@ -3424,6 +3426,36 @@ namespace Detox.ScriptEditor
       public EntityNode EntityNode { get { return m_EntityNode; } }
 
       Socket [] m_Sockets = new Socket[ 0 ];
+
+      /// <summary>Text for a wireless link label: the node's comment (or title) and the socket's name.</summary>
+      public override string DescribeSocket( string socketName )
+      {
+         string title = Name;
+         if ( m_EntityNode.Comment != Parameter.Empty && false == string.IsNullOrEmpty(m_EntityNode.Comment.Default) )
+         {
+            title = m_EntityNode.Comment.Default;
+         }
+
+         string socket = socketName;
+         foreach ( Socket s in m_Sockets )
+         {
+            if ( s.InternalName == socketName )
+            {
+               socket = s.FriendlyName;
+               break;
+            }
+         }
+
+         // A variable is known by its name; its single socket adds nothing
+         if ( m_EntityNode is LocalNode || m_EntityNode is OwnerConnection || m_EntityNode is ExternalConnection )
+         {
+            return string.IsNullOrEmpty( title ) ? socket : title;
+         }
+
+         if ( string.IsNullOrEmpty(title) ) return socket;
+         if ( string.IsNullOrEmpty(socket) ) return title;
+         return title + " : " + socket;
+      }
 
       public override Guid Guid { get { return m_EntityNode.Guid; } }
 

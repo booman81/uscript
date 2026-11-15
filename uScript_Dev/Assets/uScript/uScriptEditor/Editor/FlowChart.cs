@@ -533,6 +533,12 @@ namespace Detox.FlowChart
 
       private bool InLink(Link link, Point position)
       {
+         if ( true == link.Wireless && false == link.Selected &&
+              false == link.Source.Node.Selected && false == link.Destination.Node.Selected )
+         {
+            return false;   // the cable isn't drawn; click one of its labels instead
+         }
+
          Point start = new Point( (int) (link.Source.Anchor.X / 100.0f * link.Source.Node.Size.Width),
                                   (int) (link.Source.Anchor.Y / 100.0f * link.Source.Node.Size.Height) );
 
@@ -621,6 +627,116 @@ namespace Detox.FlowChart
                  (position.Y - end.Y) * (position.Y - end.Y);
 
          return magSq <= toleranceSq;
+      }
+
+      // === Wireless links ========================================================================================
+
+      private struct WirelessTag
+      {
+         public RectangleF GraphRect;
+         public Link Link;
+         public bool AtSource;
+      }
+
+      private readonly List<WirelessTag> m_WirelessTags = new List<WirelessTag>( );
+      private readonly Dictionary<string, int> m_WirelessTagStack = new Dictionary<string, int>( );
+      private bool m_WirelessTagClicked = false;
+      private static GUIStyle s_WirelessTagStyle = null;
+
+      /// <summary>Draws the labels of a wireless link (drawing coordinates) and remembers them for clicking.</summary>
+      private void DrawWirelessTags( Link link, PointF start, PointF end, UnityEngine.Color color )
+      {
+         if ( null == s_WirelessTagStyle )
+         {
+            s_WirelessTagStyle = new GUIStyle( EditorStyles.miniLabel );
+            s_WirelessTagStyle.normal.textColor = new UnityEngine.Color( 0.92f, 0.92f, 0.92f );
+            s_WirelessTagStyle.padding = new RectOffset( 6, 5, 1, 1 );
+            s_WirelessTagStyle.alignment = TextAnchor.MiddleLeft;
+         }
+
+         DrawWirelessTag( link, true,  start, link.Source.Anchor,      link.Source.Node,      "\u2192 " + link.Destination.Node.DescribeSocket(link.Destination.AnchorName), color );
+         DrawWirelessTag( link, false, end,   link.Destination.Anchor, link.Destination.Node, link.Source.Node.DescribeSocket(link.Source.AnchorName) + " \u2192", color );
+      }
+
+      private void DrawWirelessTag( Link link, bool atSource, PointF socket, AnchorPoint anchor, Node node, string text, UnityEngine.Color color )
+      {
+         var content = new GUIContent( text );
+         Vector2 size = s_WirelessTagStyle.CalcSize( content );
+         float width  = size.x;
+         float height = Mathf.Max( 14, size.y );
+
+         // Several wireless links on one socket stack up
+         string key = node.Guid + "|" + anchor.Name;
+         int stack;
+         m_WirelessTagStack.TryGetValue( key, out stack );
+         m_WirelessTagStack[ key ] = stack + 1;
+
+         UnityEngine.Rect rect;
+         if ( anchor.Y >= 90 )
+         {
+            // Socket at the bottom (variables, parameters): below it
+            rect = new UnityEngine.Rect( socket.X - width * 0.5f, socket.Y + 8 + stack * (height + 2), width, height );
+         }
+         else if ( true == atSource )
+         {
+            rect = new UnityEngine.Rect( socket.X + 9, socket.Y - height * 0.5f + stack * (height + 2), width, height );
+         }
+         else
+         {
+            rect = new UnityEngine.Rect( socket.X - 9 - width, socket.Y - height * 0.5f + stack * (height + 2), width, height );
+         }
+
+         bool highlighted = link.Selected || node.Selected;
+         EditorGUI.DrawRect( rect, highlighted ? new UnityEngine.Color(0.2f, 0.27f, 0.38f, 0.95f) : new UnityEngine.Color(0.13f, 0.13f, 0.15f, 0.9f) );
+
+         var bar = color;
+         bar.a = 1.0f;
+         EditorGUI.DrawRect( new UnityEngine.Rect(atSource ? rect.x : rect.xMax - 3, rect.y, 3, rect.height), bar );
+
+         GUI.Label( rect, content, s_WirelessTagStyle );
+
+         m_WirelessTags.Add( new WirelessTag
+         {
+            GraphRect = new RectangleF( rect.x - Location.X, rect.y - Location.Y, rect.width, rect.height ),
+            Link = link,
+            AtSource = atSource
+         } );
+      }
+
+      /// <summary>
+      /// Mouse down on a wireless label: selects the link and moves the view to the other end. Returns True when
+      /// a label was clicked.
+      /// </summary>
+      private bool WirelessTagMouseDown( )
+      {
+         if ( m_WirelessTags.Count == 0 ) return false;
+
+         Point position = PointToClient( Detox.Windows.Forms.Cursor.ScaledPosition );
+
+         for ( int i = m_WirelessTags.Count - 1; i >= 0; i-- )
+         {
+            WirelessTag tag = m_WirelessTags[ i ];
+            if ( position.X < tag.GraphRect.X || position.Y < tag.GraphRect.Y ||
+                 position.X > tag.GraphRect.X + tag.GraphRect.Width || position.Y > tag.GraphRect.Y + tag.GraphRect.Height )
+            {
+               continue;
+            }
+
+            if ( false == m_Links.Contains(tag.Link) ) return false;
+
+            DeselectAll( );
+            tag.Link.Selected = true;
+            OnSelectionModified( );
+
+            Node other = tag.AtSource ? tag.Link.Destination.Node : tag.Link.Source.Node;
+            uScript.Instance.CenterCanvasOn( other.Location.X + other.Size.Width * 0.5f, other.Location.Y + other.Size.Height * 0.5f );
+
+            m_WirelessTagClicked = true;
+            Invalidate( );  // Wireless label clicked
+            return true;
+         }
+
+         return false;
       }
 
       // === Reroute points ========================================================================================
@@ -780,7 +896,10 @@ namespace Detox.FlowChart
 
             if ( false == Control.ModifierKeys.Contains(Keys.Alt) )
             {
-               RouteMouseDown( );
+               if ( false == WirelessTagMouseDown( ) )
+               {
+                  RouteMouseDown( );
+               }
             }
          }
       }
@@ -1177,6 +1296,14 @@ namespace Detox.FlowChart
 
       private void FlowChartCtrl_MouseUp(object sender, MouseEventArgs e)
       {
+         if ( true == m_WirelessTagClicked )
+         {
+            // The click on a wireless label was handled on mouse down; keep the selection it made
+            m_WirelessTagClicked = false;
+            m_StartMarquee = Point.Empty;
+            return;
+         }
+
          if ( null != m_RouteDragLink )
          {
             RouteMouseUp( );
@@ -1781,6 +1908,9 @@ namespace Detox.FlowChart
          }
 
          // render links
+         m_WirelessTags.Clear( );
+         m_WirelessTagStack.Clear( );
+
          foreach (Link link in m_Links)
          {
             //ignore links which don't have visible nodes
@@ -1865,12 +1995,29 @@ namespace Detox.FlowChart
                }
             }
 
+            // Wireless links: two labels instead of the cable. The cable is shown faintly while the link or one of
+            // its nodes is selected, so you can still see where it goes.
+            bool drawCurve = true;
+            if ( true == link.Wireless )
+            {
+               DrawWirelessTags( link, start, end, lineColor );
+
+               if ( true == link.Selected || true == link.Source.Node.Selected || true == link.Destination.Node.Selected )
+               {
+                  lineColor.a *= 0.35f;
+               }
+               else
+               {
+                  drawCurve = false;
+               }
+            }
+
             Handles.color = lineColor;
 
             // A link with reroute points is drawn as one curve per piece, through each point
             PointF[] route = LinkRoute.Path( start, end, link.RoutePoints, Location );
 
-            for ( int segment = 0; segment < route.Length - 1; segment++ )
+            for ( int segment = 0; true == drawCurve && segment < route.Length - 1; segment++ )
             {
                PointF segStart = route[ segment ];
                PointF segEnd   = route[ segment + 1 ];
@@ -1887,7 +2034,7 @@ namespace Detox.FlowChart
             }
 
             // Reroute point handles
-            for ( int routeIndex = 1; routeIndex < route.Length - 1; routeIndex++ )
+            for ( int routeIndex = 1; true == drawCurve && routeIndex < route.Length - 1; routeIndex++ )
             {
                float size = LinkRoute.HandleSize;
                var handleRect = new UnityEngine.Rect( route[routeIndex].X - size * 0.5f, route[routeIndex].Y - size * 0.5f, size, size );
@@ -1956,6 +2103,7 @@ namespace Detox.FlowChart
                {
                   existing.Tag = link.Tag;
                   existing.RoutePoints = link.RoutePoints ?? new Point[ 0 ];
+                  existing.Wireless = link.Wireless;
                }
 
                return;
@@ -2196,6 +2344,9 @@ namespace Detox.FlowChart
       /// <summary>Reroute points in graph coordinates (empty for a direct link).</summary>
       public Point[]    RoutePoints = new Point[ 0 ];
 
+      /// <summary>Drawn as two labels instead of a cable.</summary>
+      public bool       Wireless = false;
+
       public Link()
       {
          Source      = new Connection( );
@@ -2276,6 +2427,12 @@ namespace Detox.FlowChart
       }
 
       public abstract Guid Guid { get; }
+
+      /// <summary>Short text naming one of this node's sockets (used by wireless link labels).</summary>
+      public virtual string DescribeSocket( string socketName )
+      {
+         return string.IsNullOrEmpty( Name ) ? socketName : Name + " : " + socketName;
+      }
       private Point m_MouseOffset;
       private Size  m_ResizeOffset;
 

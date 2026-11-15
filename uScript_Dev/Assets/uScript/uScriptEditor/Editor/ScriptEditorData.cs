@@ -274,6 +274,9 @@ namespace Detox.Data.ScriptEditor
       /// <summary>Reroute points of the link in graph coordinates ("x,y;x,y"), empty for a direct link.</summary>
       public string RoutePoints;
 
+      /// <summary>Drawn as two small labels instead of a cable ("wireless" link). Display only.</summary>
+      public bool Wireless;
+
       public override void Clone(EntityNodeData cloneFrom)
       {
          base.Clone( cloneFrom );
@@ -284,6 +287,7 @@ namespace Detox.Data.ScriptEditor
          Source      = linkData.Source;
          Destination = linkData.Destination;
          RoutePoints = linkData.RoutePoints;
+         Wireless    = linkData.Wireless;
       }
 
       public new int Version { get { return 1; } }
@@ -299,6 +303,7 @@ namespace Detox.Data.ScriptEditor
 
          // Added in uScript for Unity 6; older graphs simply don't have it
          RoutePoints = serializer.LoadNamedObject( "RoutePoints" ) as string;
+         Wireless    = "1" == (serializer.LoadNamedObject( "Wireless" ) as string);
       }
 
       public new void Save(ObjectSerializer serializer)
@@ -313,6 +318,11 @@ namespace Detox.Data.ScriptEditor
          if ( false == string.IsNullOrEmpty(RoutePoints) )
          {
             serializer.SaveNamedObject( "RoutePoints", RoutePoints );
+         }
+
+         if ( true == Wireless )
+         {
+            serializer.SaveNamedObject( "Wireless", "1" );
          }
       }
    }

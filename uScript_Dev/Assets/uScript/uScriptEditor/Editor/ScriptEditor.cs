@@ -1431,6 +1431,7 @@ namespace Detox.ScriptEditor
          if ( Guid != node.Guid ) return false;
 
          if ( (RoutePoints ?? "") != (node.RoutePoints ?? "") ) return false;
+         if ( Wireless != node.Wireless ) return false;
 
          return true;
       }
@@ -1446,6 +1447,7 @@ namespace Detox.ScriptEditor
          linkNode.Source     = Source;
          linkNode.Destination= Destination;
          linkNode.RoutePoints= RoutePoints;
+         linkNode.Wireless   = Wireless;
          linkNode.Guid       = preserveGuid ? Guid : Guid.NewGuid( );
 
          return linkNode;
@@ -1462,6 +1464,7 @@ namespace Detox.ScriptEditor
             nodeData.Destination.Guid   = Destination.Guid;
             nodeData.Destination.Anchor = Destination.Anchor;
             nodeData.RoutePoints = RoutePoints;
+            nodeData.Wireless = Wireless;
 
             return nodeData;
          }
@@ -1493,6 +1496,9 @@ namespace Detox.ScriptEditor
       /// <summary>Reroute points in graph coordinates ("x,y;x,y"); null or empty for a direct link.</summary>
       public string RoutePoints;
 
+      /// <summary>Drawn as two small labels instead of a cable. Display only, no effect on the code.</summary>
+      public bool Wireless;
+
       public Point Position { get { throw new Exception("Link has no position"); } set { throw new Exception("Link has no position"); } }
 
       public string TypeName
@@ -1507,6 +1513,7 @@ namespace Detox.ScriptEditor
       {
          m_Guid = Guid.NewGuid( );
          RoutePoints = null;
+         Wireless = false;
  
          Source.Guid   = source;
          Source.Anchor = sourceAnchor;
@@ -1523,6 +1530,7 @@ namespace Detox.ScriptEditor
          Destination.Guid   = data.Destination.Guid;
          Destination.Anchor = data.Destination.Anchor;
          RoutePoints = data.RoutePoints;
+         Wireless = data.Wireless;
       }
    }
 

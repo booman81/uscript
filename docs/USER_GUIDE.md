@@ -138,6 +138,19 @@ choose is placed with its socket under the mouse and already connected. One **Ct
     and older graphs open unchanged. (Graphs saved with reroute points still open in older uScript versions;
     their links are just drawn straight.)
 
+### Wireless links
+
+Long cables across the graph can be shown as two small labels instead:
+
+- Select links, or the nodes they belong to, then right-click > **Wireless Links > Make Wireless**.
+  The cable disappears. The output end gets a label like `→ Item_New : In`, and the input end a label like
+  `String Switch : B Matched →`. The label shows the node's comment if it has one, otherwise its title.
+- **Click a label** to select that link and move the view to the other end.
+- While the link or one of its nodes is selected, the cable is drawn faintly so you can see where it goes.
+- **Wireless Links > Show as Cables** turns them back into normal cables.
+- This only changes how the link is drawn; the graph works exactly the same. It is saved with the graph, works
+  with undo and copy/paste, and older uScript versions show these links as normal cables.
+
 ---
 
 ## Moving around the canvas

@@ -145,6 +145,18 @@ public sealed partial class uScript
       return new Vector2(_canvasRect.width * 0.5f, _canvasRect.height * 0.5f);
    }
 
+   private static void AddLayoutItem(UnityEditor.GenericMenu menu, string path, bool enabled, UnityEditor.GenericMenu.MenuFunction action)
+   {
+      if (enabled)
+      {
+         menu.AddItem(new GUIContent(path), false, action);
+      }
+      else
+      {
+         menu.AddDisabledItem(new GUIContent(path));
+      }
+   }
+
    /// <summary>Adds the Frame items to a canvas or View menu.</summary>
    private void AddLayoutMenuItems(UnityEditor.GenericMenu menu, string prefix)
    {
@@ -152,6 +164,16 @@ public sealed partial class uScript
 
       menu.AddItem(new GUIContent(prefix + (selected > 0 ? "Frame Selected  (F)" : "Frame All  (F)")), false, this.CommandCanvasFrameSelected);
       menu.AddItem(new GUIContent(prefix + "Frame All  (A)"), false, this.CommandCanvasFrameAll);
+
+      if (m_ScriptEditorCtrl != null)
+      {
+         var links = m_ScriptEditorCtrl.LinksForWirelessCommands();
+         var canMakeWireless = links.Any(link => !link.Wireless);
+         var canShowCables = links.Any(link => link.Wireless);
+
+         AddLayoutItem(menu, prefix + "Wireless Links/Make Wireless", canMakeWireless, () => m_ScriptEditorCtrl.SetLinksWireless(links, true));
+         AddLayoutItem(menu, prefix + "Wireless Links/Show as Cables", canShowCables, () => m_ScriptEditorCtrl.SetLinksWireless(links, false));
+      }
 
       var hasReroutes = m_ScriptEditorCtrl != null
          && m_ScriptEditorCtrl.FlowChart.SelectedLinks.Any(link => link.RoutePoints != null && link.RoutePoints.Length > 0);
