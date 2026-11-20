@@ -762,6 +762,119 @@ public sealed partial class uScript
    private static GUIStyle graphTabStyle;
    private static GUIStyle graphTabCloseStyle;
 
+   // Dragging tabs to reorder them
+   private readonly List<Rect> graphTabRects = new List<Rect>();
+   private GraphTab tabDragTab;
+   private Vector2 tabDragStart;
+   private bool tabDragging;
+   private int tabDropIndex = -1;
+
+   /// <summary>Where a dragged tab would be inserted for this mouse position (0..count).</summary>
+   private int TabDropIndexAt(float mouseX)
+   {
+      for (var i = 0; i < this.graphTabRects.Count; i++)
+      {
+         if (mouseX < this.graphTabRects[i].center.x)
+         {
+            return i;
+         }
+      }
+
+      return this.graphTabRects.Count;
+   }
+
+   /// <summary>
+   /// Handles grabbing a tab and dropping it somewhere else in the bar. Runs before the tabs are drawn, using
+   /// their positions from the previous redraw.
+   /// </summary>
+   private void HandleGraphTabDragging(Event e)
+   {
+      switch (e.type)
+      {
+         case EventType.MouseDown:
+            if (e.button == 0)
+            {
+               this.tabDragTab = null;
+               this.tabDragging = false;
+
+               for (var i = 0; i < this.graphTabRects.Count && i < this.graphTabs.Count; i++)
+               {
+                  if (this.graphTabRects[i].Contains(e.mousePosition))
+                  {
+                     // Not used here: a click without dragging still switches tabs
+                     this.tabDragTab = this.graphTabs[i];
+                     this.tabDragStart = e.mousePosition;
+                     break;
+                  }
+               }
+            }
+
+            break;
+
+         case EventType.MouseDrag:
+            if (this.tabDragTab != null)
+            {
+               if (!this.tabDragging && Vector2.Distance(e.mousePosition, this.tabDragStart) > 6f)
+               {
+                  this.tabDragging = true;
+               }
+
+               if (this.tabDragging)
+               {
+                  this.tabDropIndex = this.TabDropIndexAt(e.mousePosition.x);
+                  e.Use();
+                  this.Repaint();
+               }
+            }
+
+            break;
+
+         case EventType.MouseUp:
+            if (this.tabDragTab != null && this.tabDragging)
+            {
+               this.MoveGraphTab(this.tabDragTab, this.TabDropIndexAt(e.mousePosition.x));
+
+               // The tab button grabbed the mouse on mouse down; release it without counting this as a click
+               GUIUtility.hotControl = 0;
+               e.Use();
+               this.Repaint();
+            }
+
+            this.tabDragTab = null;
+            this.tabDragging = false;
+            this.tabDropIndex = -1;
+            break;
+      }
+   }
+
+   private void MoveGraphTab(GraphTab tab, int insertIndex)
+   {
+      var from = this.graphTabs.IndexOf(tab);
+      if (from < 0)
+      {
+         return;
+      }
+
+      var active = this.ActiveGraphTab;
+
+      if (insertIndex > from)
+      {
+         insertIndex--;
+      }
+
+      insertIndex = Mathf.Clamp(insertIndex, 0, this.graphTabs.Count - 1);
+      if (insertIndex == from)
+      {
+         return;
+      }
+
+      this.graphTabs.RemoveAt(from);
+      this.graphTabs.Insert(insertIndex, tab);
+
+      this.activeGraphTab = active != null ? this.graphTabs.IndexOf(active) : -1;
+      this.SaveGraphTabList();
+   }
+
    private void DrawGraphTabs()
    {
       var e = Event.current;
@@ -771,10 +884,20 @@ public sealed partial class uScript
          this.SyncGraphTabs();
       }
 
+      if (this.graphTabs != null)
+      {
+         this.HandleGraphTabDragging(e);
+      }
+
       if (graphTabStyle == null)
       {
          graphTabStyle = new GUIStyle(EditorStyles.toolbarButton) { alignment = TextAnchor.MiddleLeft, padding = new RectOffset(8, 2, 0, 0) };
          graphTabCloseStyle = new GUIStyle(EditorStyles.toolbarButton) { padding = new RectOffset(0, 0, 0, 0), alignment = TextAnchor.MiddleCenter };
+      }
+
+      if (e.type == EventType.Repaint)
+      {
+         this.graphTabRects.Clear();
       }
 
       EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
@@ -792,6 +915,17 @@ public sealed partial class uScript
 
             var pressed = GUILayout.Toggle(isActive, content, graphTabStyle, GUILayout.ExpandWidth(false), GUILayout.MaxWidth(200));
             var tabRect = GUILayoutUtility.GetLastRect();
+
+            if (e.type == EventType.Repaint)
+            {
+               this.graphTabRects.Add(tabRect);
+
+               // The tab being dragged is tinted
+               if (this.tabDragging && tab == this.tabDragTab)
+               {
+                  EditorGUI.DrawRect(tabRect, new Color(0.35f, 0.6f, 1f, 0.25f));
+               }
+            }
 
             var closePressed = GUILayout.Button(new GUIContent("×", "Close tab (middle-click a tab also closes it)"), graphTabCloseStyle, GUILayout.Width(16));
 
@@ -824,6 +958,16 @@ public sealed partial class uScript
             {
                EditorApplication.delayCall += () => this.ActivateGraphTab(tabToUse);
             }
+         }
+
+         // Where the dragged tab will go
+         if (e.type == EventType.Repaint && this.tabDragging && this.tabDropIndex >= 0 && this.graphTabRects.Count > 0)
+         {
+            var x = this.tabDropIndex < this.graphTabRects.Count
+               ? this.graphTabRects[this.tabDropIndex].xMin
+               : this.graphTabRects[this.graphTabRects.Count - 1].xMax + 16;
+            var bar = this.graphTabRects[0];
+            EditorGUI.DrawRect(new Rect(x - 1, bar.y + 1, 2, bar.height - 2), new Color(0.35f, 0.65f, 1f, 1f));
          }
 
          GUILayout.FlexibleSpace();

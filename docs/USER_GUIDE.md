@@ -76,6 +76,7 @@ Every graph you open gets a tab under the toolbar.
 - Close a tab with its **×** or with a middle-click. Right-click a tab for **Close**, **Close Other Tabs** and
   **Show in Project**.
 - **+** at the right creates a new graph in a new tab.
+- **Drag a tab** left or right to change the order. A blue line shows where it will go. The order is remembered.
 - Open tabs come back the next time you open uScript.
 - Undo history is per session of a tab: switching tabs clears it.
 - Entering Play mode warns you if a graph in another tab has unsaved changes.
