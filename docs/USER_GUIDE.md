@@ -202,7 +202,7 @@ Unity 2021.2 and later, including Unity 6.
 
 ## Faster saves
 
-**File > Compile Graphs Separately (Faster Saves)** is an option you turn on per project.
+**File > Compile Graphs Separately (Faster Saves)**, also a checkbox in the uScript Preferences under Code Generation Settings, is an option you turn on per project.
 
 Normally, saving a graph makes Unity recompile **all** scripts in your project. With this option on, the generated
 graph code compiles as its own assembly (`uScriptGraphs`), and your custom nodes as `uScriptNodes`. Saving a graph

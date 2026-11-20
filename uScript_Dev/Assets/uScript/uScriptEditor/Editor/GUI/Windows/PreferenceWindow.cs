@@ -95,6 +95,18 @@ namespace Detox.Editor.GUI.Windows
          var method = (Detox.Editor.Preferences.SaveMethodType)EditorGUILayout.EnumPopup("Save Method", Preferences.SaveMethod);
          Preferences.SaveMethod = method;
 
+         // Project setting (it adds assembly definitions to the project), so it's switched with the usual checks
+         var separately = uScriptGraphAssembly.IsEnabled;
+         var wantSeparately = EditorGUILayout.Toggle(
+            new GUIContent(
+               "Compile Graphs Separately",
+               "Compile the generated graph code (and custom nodes) as their own assemblies, so saving a graph doesn't recompile all your scripts. Applies to this project; uScript checks first that it is possible."),
+            separately);
+         if (wantSeparately != separately)
+         {
+            EditorApplication.delayCall += uScriptGraphAssembly.Toggle;
+         }
+
          var fieldWidth = EditorGUIUtility.fieldWidth;
          EditorGUIUtility.fieldWidth = 28;
          var multilineHeight = EditorGUILayout.IntSlider(
