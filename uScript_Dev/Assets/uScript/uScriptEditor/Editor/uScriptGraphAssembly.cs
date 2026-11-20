@@ -273,7 +273,7 @@ public static class uScriptGraphAssembly
       SortedSet<string> problems,
       string usedBy)
    {
-      if (used == null || used.IsGenericParameter)
+      if (used == null || used.IsGenericParameter || IsCompilerGenerated(used))
       {
          return;
       }
@@ -312,6 +312,24 @@ public static class uScriptGraphAssembly
       {
          references.Add(assemblyName);
       }
+   }
+
+   /// <summary>
+   /// Helper types the C# compiler adds to every assembly ("&lt;PrivateImplementationDetails&gt;", lambda and
+   /// iterator classes, ...). They are rebuilt inside whichever assembly the code ends up in, so they never count.
+   /// </summary>
+   private static bool IsCompilerGenerated(Type type)
+   {
+      for (var t = type; t != null; t = t.DeclaringType)
+      {
+         if (t.Name.StartsWith("<", StringComparison.Ordinal) || t.Name.Contains("<>") ||
+             t.IsDefined(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), false))
+         {
+            return true;
+         }
+      }
+
+      return false;
    }
 
    // ---------------------------------------------------------------------------------------------------------------
