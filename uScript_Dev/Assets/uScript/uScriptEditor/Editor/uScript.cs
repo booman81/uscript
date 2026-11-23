@@ -1665,37 +1665,47 @@ public sealed partial class uScript : EditorWindow
 
    private void RefreshOnHierarchyChange()
    {
-      // Unity calls OnHierarchyChanged all the time while the app is playing.
-      // We need to delay those calls so uScript isn't constantly being reopened.
-      if (Application.isPlaying)
+      if (!this.hierarchyRefreshCallbackAdded)
       {
-         EditorApplication.delayCall += this.RefreshOnHierarchyChange;
-         this.hierarchyRefreshCallbackAdded = true;
+         return;
       }
-      else
+
+      this.hierarchyRefreshCallbackAdded = false;
+
+      // Changes made while playing are thrown away when Play stops, so they never need a refresh.
+      if (EditorApplication.isPlayingOrWillChangePlaymode)
       {
-         if (this.hierarchyRefreshCallbackAdded)
-         {
-            uScriptGUIPanelToolbox.Instance.ClearSearchFilter();
-
-            if (Preferences.AutoUpdateReflection)
-            {
-               this.UpdateReflectedTypes();
-            }
-            this.OpenFromCache();
-         }
-
-         this.hierarchyRefreshCallbackAdded = false;
+         return;
       }
+
+      uScriptGUIPanelToolbox.Instance.ClearSearchFilter();
+
+      if (Preferences.AutoUpdateReflection)
+      {
+         this.UpdateReflectedTypes();
+      }
+
+      this.OpenFromCache();
    }
 
    internal void OnHierarchyChange()
    {
-      if (Preferences.RefreshOnHierarchyChange)
+      // While playing, Unity reports hierarchy changes all the time (spawned objects, for example). Those objects
+      // are gone when Play stops, so they are ignored. Before, each one queued a refresh that ran after Play,
+      // reloading the open graph ("Hold on ... RefreshOnHierarchyChange").
+      if (!Preferences.RefreshOnHierarchyChange || EditorApplication.isPlayingOrWillChangePlaymode)
       {
-         EditorApplication.delayCall += this.RefreshOnHierarchyChange;
-         this.hierarchyRefreshCallbackAdded = true;
+         return;
       }
+
+      // One refresh at a time: many changes in a row (for example pasting objects) refresh once.
+      if (this.hierarchyRefreshCallbackAdded)
+      {
+         return;
+      }
+
+      this.hierarchyRefreshCallbackAdded = true;
+      EditorApplication.delayCall += this.RefreshOnHierarchyChange;
    }
 
    internal void OnProjectChange()
