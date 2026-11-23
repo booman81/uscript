@@ -173,7 +173,9 @@ namespace uScriptMcp
 
             var exposedVariables = view.Entities.OfType<LocalNode>()
                .Where(v => v.Externaled.Default == "true")
-               .Select(v => new { name = v.Name.Default, type = v.Value.Type, value = GraphView.ValueOf(v.Value) })
+               .GroupBy(v => v.Name.Default + "|" + v.Value.Type) // one uScript variable can appear as many nodes
+               .Select(g => new { name = g.First().Name.Default, type = g.First().Value.Type, value = GraphView.ValueOf(g.First().Value) })
+               .OrderBy(v => v.name, StringComparer.OrdinalIgnoreCase)
                .ToList();
 
             var connections = view.Entities.OfType<ExternalConnection>()
