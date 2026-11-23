@@ -29,7 +29,7 @@ www.detoxstudios.com
 
 See docs/USER_GUIDE.md (https://github.com/booman81/uscript/blob/stable/docs/USER_GUIDE.md)
 for installing, Unity 6 notes and everything new: tabs, Quick Add, the Variables tab,
-error links, reroute points, the minimap and faster saves.
+error links, reroute points, the minimap, faster saves and the AI assistant tools (MCP).
 
 
 ** Installing uScript from GitHub (recommended) **

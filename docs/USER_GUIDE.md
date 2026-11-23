@@ -13,6 +13,7 @@ For the basics of visual scripting in uScript (nodes, links, variables, events, 
 - [Variables tab](#variables-tab)
 - [Finding errors](#finding-errors)
 - [Faster saves](#faster-saves)
+- [AI assistant tools (MCP)](#ai-assistant-tools-mcp)
 - [New nodes](#new-nodes)
 - [Shortcuts](#shortcuts)
 - [What was removed](#what-was-removed)
@@ -221,6 +222,32 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 - Assemblies a graph needs (for example TextMeshPro or the Input System) are added automatically when you save.
 - If a graph starts using a script from `Assembly-CSharp`, uScript tells you and offers to turn the option off.
 - Turn it off again from the same menu item.
+
+---
+
+## AI assistant tools (MCP)
+
+If the free **MCP for Unity** package (`com.coplaydev.unity-mcp`, version 9 or newer) is installed in your project, uScript adds
+tools that let an AI assistant (Claude, ChatGPT, Gemini or any other app that supports MCP) **read** your graphs. Nothing
+needs setting up in uScript: the tools appear automatically when the package is present, and without it this part of uScript
+is simply not compiled.
+
+**The tools only read.** They never change graphs, generated code or anything else in your project.
+
+| Tool | What it does |
+|---|---|
+| `uscript_list_graphs` | Lists the graphs in the project. |
+| `uscript_read_graph` | Describes one graph: its nodes, typed-in values, variables, and what is connected to what. Big graphs come in pages and can be searched. |
+| `uscript_find` | Searches all graphs for a text: a signal name, an animation state, a node type, a comment. |
+| `uscript_signals` | Lists every signal name sent with Send Signal, which graphs send it, and which graphs mention that name (usually where it is received). Flags signals nobody mentions. |
+| `uscript_check_graph` | Looks for likely mistakes: broken links, nodes that never run, events connected to nothing, unused variables, empty signal names, out-of-date generated code. |
+
+**Node ids match the generated code.** Every node has an id, and it is the same number uScript uses in the graph's C# code.
+A Console error with `Zombie_Hero:Relay_In_865` in its stack trace comes from node 865 of Zombie_Hero, so you can ask the
+assistant "what is node 865 in Zombie_Hero?". This holds as long as the graph was saved after its last change.
+
+To check the tools are there, open **Window > MCP for Unity**, then the **Tools** tab. The uScript tools are listed with
+the others, and can be switched off there like any other tool.
 
 ---
 

@@ -1,0 +1,30 @@
+{
+    "name": "uScript.Editor.MCP",
+    "rootNamespace": "",
+    "references": [
+        "uScript.Editor",
+        "uScript.Runtime",
+        "MCPForUnity.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Newtonsoft.Json.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "USCRIPT_MCP_FOR_UNITY"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.coplaydev.unity-mcp",
+            "expression": "9.0.0",
+            "define": "USCRIPT_MCP_FOR_UNITY"
+        }
+    ],
+    "noEngineReferences": false
+}
