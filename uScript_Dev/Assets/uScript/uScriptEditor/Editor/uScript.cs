@@ -2424,24 +2424,40 @@ public sealed partial class uScript : EditorWindow
    {
       //if we're not debugging values then we're just starting into playing in the editor
       //and warn them, otherwise we've already warned them so don't pop up a warning again
-      if (false == m_IsDebuggingValues)
+      if (false == m_IsDebuggingValues && EditorApplication.isPlayingOrWillChangePlaymode)
       {
-         if (EditorApplication.isPlayingOrWillChangePlaymode && m_ScriptEditorCtrl != null && true == m_ScriptEditorCtrl.IsDirty)
+         var warnings = new List<string>();
+
+         if (m_ScriptEditorCtrl != null && true == m_ScriptEditorCtrl.IsDirty)
          {
-            EditorUtility.DisplayDialog("uScript Not Saved!", "uScript has detected that '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' has been changed, but not saved! You will not see any changes until you save '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' in the uScript Editor.", "OK");
+            warnings.Add("'" + m_ScriptEditorCtrl.ScriptEditor.Name + "' has unsaved changes.");
          }
-         else if (EditorApplication.isPlayingOrWillChangePlaymode && m_ScriptEditorCtrl != null && true == m_ScriptEditorCtrl.CodeIsStale)
+         else if (m_ScriptEditorCtrl != null && true == m_ScriptEditorCtrl.CodeIsStale)
          {
-            EditorUtility.DisplayDialog("uScript Not Saved!", "uScript has detected that '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' was quick saved but the code has not been generated! You will not see any changes until you save '" + m_ScriptEditorCtrl.ScriptEditor.Name + "' in the uScript Editor.", "OK");
+            warnings.Add("'" + m_ScriptEditorCtrl.ScriptEditor.Name + "' was quick saved, but its code was not generated.");
          }
 
-         if (EditorApplication.isPlayingOrWillChangePlaymode)
+         var unsavedTabs = this.UnsavedBackgroundTabs(this.graphTabs.Select(tab => GraphTabName(tab)));
+         foreach (string tab in unsavedTabs)
          {
-            var unsavedTabs = this.UnsavedBackgroundTabs(this.graphTabs.Select(tab => GraphTabName(tab)));
-            if (unsavedTabs.Count > 0)
-            {
-               EditorUtility.DisplayDialog("uScript Not Saved!", "These graphs in other uScript tabs have unsaved changes, you will not see them until you save them:\n\n" + string.Join("\n", unsavedTabs.ToArray()), "OK");
-            }
+            warnings.Add("'" + tab + "' (another tab) has unsaved changes.");
+         }
+
+         if (warnings.Count == 0)
+         {
+            return;
+         }
+
+         string text = "uScript: the game runs without these changes until you save:\n" + string.Join("\n", warnings.ToArray());
+
+         if (Preferences.UnsavedPlayPopup)
+         {
+            EditorUtility.DisplayDialog("uScript Not Saved!", text, "OK");
+         }
+         else
+         {
+            UnityEngine.Debug.LogWarning(text);
+            this.ShowNotification(new GUIContent(warnings.Count == 1 ? "Unsaved graph: changes not in this Play" : warnings.Count + " unsaved graphs: changes not in this Play"));
          }
       }
    }

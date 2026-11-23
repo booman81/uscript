@@ -102,6 +102,10 @@ It saves as Release, or as Debug when Debug is your chosen save method.
 Pressing Play yourself right after saving also waits for the new code to compile first, so the game never runs the
 previous version (this matters when **Enter Play Mode Options** has **Reload Domain** turned off).
 
+Pressing Play with unsaved graphs no longer stops you with a popup. A short note appears in the uScript window and the
+Console lists which graphs are unsaved. To get the old popup back, turn on **Unsaved Graph Popup on Play** in the
+uScript Preferences.
+
 ### New custom nodes appear immediately
 
 When you add or change a custom node in `uScriptProjectFiles/Nodes`, it shows up in the Toolbox after Unity

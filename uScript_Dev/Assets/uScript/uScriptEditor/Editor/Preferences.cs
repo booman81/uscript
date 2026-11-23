@@ -218,6 +218,13 @@ namespace Detox.Editor
          set { EditorPrefs.SetBool("DetoxStudios.uScript.GridSnap", value); }
       }
 
+      /// <summary>Show a popup when Play is pressed with unsaved graphs (off by default: a Console warning is shown instead).</summary>
+      public static bool UnsavedPlayPopup
+      {
+         get { return EditorPrefs.GetBool("DetoxStudios.uScript.UnsavedPlayPopup", false); }
+         set { EditorPrefs.SetBool("DetoxStudios.uScript.UnsavedPlayPopup", value); }
+      }
+
       /// <summary>Releasing a dragged link on empty canvas opens Quick Add with the nodes that can connect (off by default).</summary>
       public static bool QuickAddOnLinkDrop
       {

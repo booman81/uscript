@@ -212,6 +212,9 @@ namespace Detox.Editor.GUI.Windows
          Preferences.QuickAddOnLinkDrop = EditorGUILayout.Toggle(
             new GUIContent("Quick Add on Link Drop", "Releasing a link on empty canvas opens Quick Add with the nodes that can connect to it, and connects the chosen node."),
             Preferences.QuickAddOnLinkDrop);
+         Preferences.UnsavedPlayPopup = EditorGUILayout.Toggle(
+            new GUIContent("Unsaved Graph Popup on Play", "When Play is pressed with unsaved graphs, show a popup. When off, a warning goes to the Console instead."),
+            Preferences.UnsavedPlayPopup);
          Preferences.LineWidthMultiplier = EditorGUILayout.FloatField("Connector Line Width", Preferences.LineWidthMultiplier);
          Preferences.LineSelectionTolerance = EditorGUILayout.FloatField("Line Selection Tolerance", Preferences.LineSelectionTolerance);
 
