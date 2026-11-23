@@ -1,7 +1,7 @@
 {
   "name": "com.detoxstudios.uscript",
   "displayName": "uScript",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "unity": "2021.3",
   "description": "uScript visual scripting by Detox Studios (open-sourced under the MIT license), updated for Unity 6.",
   "keywords": [

@@ -29,8 +29,10 @@ uScript is installed as a package straight from GitHub.
 
 | Version | URL |
 |---|---|
-| Stable (the original uScript, fixed for Unity 6) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#stable` |
-| Develop (all new features in this guide) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#develop` |
+| Stable, version 2.0.0 (everything in this guide, recommended) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#stable` |
+| Exactly 2.0.0 (never updates) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#v2.0.0` |
+| Develop (newest work, may be unfinished) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#develop` |
+| Original 1.1.0 (only fixed for Unity 6, no new features) | `https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#v1.1.0` |
 
 Open uScript with **Ctrl+U** (Cmd+U on Mac) or from **Tools > uScript > uScript Editor**. The menu location can be changed in the uScript Preferences.
 

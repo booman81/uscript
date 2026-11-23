@@ -27,7 +27,7 @@ www.detoxstudios.com
 
 ** User Guide for this version **
 
-See docs/USER_GUIDE.md (https://github.com/booman81/uscript/blob/develop/docs/USER_GUIDE.md)
+See docs/USER_GUIDE.md (https://github.com/booman81/uscript/blob/stable/docs/USER_GUIDE.md)
 for installing, Unity 6 notes and everything new: tabs, Quick Add, the Variables tab,
 error links, reroute points, the minimap and faster saves.
 
@@ -36,7 +36,10 @@ error links, reroute points, the minimap and faster saves.
 
 In Unity: Window > Package Manager > "+" > "Install package from git URL..." and enter:
 
-    https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript
+    https://github.com/booman81/uscript.git?path=/uScript_Dev/Assets/uScript#stable
+
+This is version 2.0.0. To stay on exactly this version, use #v2.0.0 instead of #stable.
+The original uScript 1.1.0 (only fixed for Unity 6, no new features) is kept as #v1.1.0.
 
 To update later, select uScript in the Package Manager and click "Update" (or remove and re-add it).
 Your graphs and generated code stay in Assets/uScriptProjectFiles and are not touched.
