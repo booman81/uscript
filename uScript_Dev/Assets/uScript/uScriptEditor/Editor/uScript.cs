@@ -281,6 +281,8 @@ public sealed partial class uScript : EditorWindow
 
    private bool hierarchyRefreshCallbackAdded = false;
 
+   private double ignoreHierarchyChangesUntil;
+
    private Rect helpButtonRect;
    private Rect fileButtonRect;
    private Rect viewButtonRect;
@@ -1673,7 +1675,7 @@ public sealed partial class uScript : EditorWindow
       this.hierarchyRefreshCallbackAdded = false;
 
       // Changes made while playing are thrown away when Play stops, so they never need a refresh.
-      if (EditorApplication.isPlayingOrWillChangePlaymode)
+      if (EditorApplication.isPlayingOrWillChangePlaymode || EditorApplication.timeSinceStartup < this.ignoreHierarchyChangesUntil)
       {
          return;
       }
@@ -1693,7 +1695,8 @@ public sealed partial class uScript : EditorWindow
       // While playing, Unity reports hierarchy changes all the time (spawned objects, for example). Those objects
       // are gone when Play stops, so they are ignored. Before, each one queued a refresh that ran after Play,
       // reloading the open graph ("Hold on ... RefreshOnHierarchyChange").
-      if (!Preferences.RefreshOnHierarchyChange || EditorApplication.isPlayingOrWillChangePlaymode)
+      if (!Preferences.RefreshOnHierarchyChange || EditorApplication.isPlayingOrWillChangePlaymode
+          || EditorApplication.timeSinceStartup < this.ignoreHierarchyChangesUntil)
       {
          return;
       }
@@ -2445,6 +2448,12 @@ public sealed partial class uScript : EditorWindow
       if (state == PlayModeStateChange.ExitingEditMode)
       {
          OnPlaymodeStateChanged();
+      }
+      else if (state == PlayModeStateChange.EnteredEditMode)
+      {
+         // Stopping Play puts the scene back as it was, which Unity reports as a hierarchy change.
+         // Nothing really changed, so skip the refresh (it reloads the open graph, which takes seconds on big graphs).
+         this.ignoreHierarchyChangesUntil = EditorApplication.timeSinceStartup + 2.0;
       }
    }
 
