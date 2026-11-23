@@ -253,7 +253,7 @@ namespace uScriptMcp
          return picked.Distinct().OrderBy(i => i).ToList();
       }
 
-      public static bool Matches(GraphView view, int id, string search)
+      internal static bool Matches(GraphView view, int id, string search)
       {
          EntityNode entity = view.Entities[id];
 
@@ -270,7 +270,7 @@ namespace uScriptMcp
          return false;
       }
 
-      public static object Describe(GraphView view, int id)
+      internal static object Describe(GraphView view, int id)
       {
          EntityNode entity = view.Entities[id];
          var node = new Dictionary<string, object>();
