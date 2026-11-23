@@ -298,6 +298,7 @@ public sealed partial class uScript : EditorWindow
    private string m_CurrentBreakpoint = string.Empty;
 
    private bool m_IsDebuggingValues;
+   private bool m_ShowsRemoteValues;
 
    private GenericMenu _canvasContextMenu;
 
@@ -1228,23 +1229,41 @@ public sealed partial class uScript : EditorWindow
 
       if (EditorApplication.isPlaying)
       {
-         //if the current breakpoint has changed we need to repaint
-         //so the node visuals are properly reflected
-         if (uScript.MasterComponent.CurrentBreakpoint != m_CurrentBreakpoint)
+         // Breakpoints and live values only exist for graphs saved as Debug. For Release graphs there is
+         // nothing to do, so the master object is not looked up every frame.
+         if (m_ScriptEditorCtrl.ScriptEditor.SavedForDebugging)
          {
-            m_CurrentBreakpoint = uScript.MasterComponent.CurrentBreakpoint;
-            uScript.RequestRepaint();
+            //if the current breakpoint has changed we need to repaint
+            //so the node visuals are properly reflected
+            var master = uScript.MasterComponent;
+            if (master.CurrentBreakpoint != m_CurrentBreakpoint)
+            {
+               m_CurrentBreakpoint = master.CurrentBreakpoint;
+               uScript.RequestRepaint();
+            }
+
+            if (m_ScriptEditorCtrl.UpdateRemoteValues())
+            {
+               m_ShowsRemoteValues = true;
+            }
          }
 
-         m_ScriptEditorCtrl.UpdateRemoteValues();
          m_IsDebuggingValues = true;
       }
       else if (true == m_IsDebuggingValues)
       {
-         //no longer playing then reset
-         //our script to the previous state
          m_IsDebuggingValues = false;
-         OpenFromCache();
+
+         // Only reload the graph when live values were shown on it during Play. Reloading a big graph
+         // takes seconds ("Hold on"), and without live values the graph is unchanged anyway.
+         if (m_ShowsRemoteValues)
+         {
+            m_ShowsRemoteValues = false;
+
+            //no longer playing then reset
+            //our script to the previous state
+            OpenFromCache();
+         }
 
          //keep our undo stack at the value it was
          //when they last undid

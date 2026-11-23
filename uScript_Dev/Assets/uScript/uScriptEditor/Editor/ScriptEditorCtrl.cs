@@ -1313,9 +1313,12 @@ namespace Detox.ScriptEditor
          }
       }
 
-      public void UpdateRemoteValues( )
+      /// <summary>Shows live values while playing (graphs saved as Debug only). Returns true when a shown value changed.</summary>
+      public bool UpdateRemoteValues( )
       {
-         if ( false == m_ScriptEditor.SavedForDebugging ) return;
+         if ( false == m_ScriptEditor.SavedForDebugging ) return false;
+
+         bool changed = false;
 
          Patch.Batch batchPatch = new Detox.Patch.Batch( "Runtime Debugging" );
 
@@ -1335,6 +1338,7 @@ namespace Detox.ScriptEditor
 
                m_ScriptEditor.AddNode( clone );
                batchPatch.Add( new Patch.EntityNode("", localNode, clone) );
+               changed = true;
             }
          }
          foreach ( EntityProperty propertyNode in m_ScriptEditor.Properties )
@@ -1352,15 +1356,18 @@ namespace Detox.ScriptEditor
 
                m_ScriptEditor.AddNode( clone );
                batchPatch.Add( new Patch.EntityNode("", propertyNode, clone) );
+               changed = true;
             }
          }
 
-         PatchDisplay( batchPatch );
+         if ( changed ) PatchDisplay( batchPatch );
 
          //we do not patch the undo stack/cache because when unity stops running
          //the undo stack/cache is used to reset us to the default state
          //theoretically this doesn't matter because when Unity stops playing
          //it restores our cache to the previous state anyway
+
+         return changed;
       }
       
       private void m_MenuAddBreakpoint_Click(object sender, EventArgs e)
