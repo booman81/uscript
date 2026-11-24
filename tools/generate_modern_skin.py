@@ -84,9 +84,13 @@ def save(img, relative):
 
 
 def write_meta(path):
+    """Writes the same import settings as the Classic textures (only filtering is smoothed), keeping an existing GUID."""
     meta = path + ".meta"
+    guid = uuid.uuid4().hex
     if os.path.exists(meta):
-        return  # keep the GUID stable once it exists
+        for line in open(meta):
+            if line.startswith("guid:"):
+                guid = line.split(":", 1)[1].strip()
     with open(meta, "w") as f:
         f.write(
             "fileFormatVersion: 2\n"
@@ -94,8 +98,22 @@ def write_meta(path):
             "TextureImporter:\n"
             "  serializedVersion: 2\n"
             "  mipmaps:\n"
+            "    mipMapMode: 0\n"
             "    enableMipMap: 0\n"
+            "    linearTexture: 0\n"
+            "    correctGamma: 0\n"
+            "    fadeOut: 0\n"
+            "    borderMipMap: 0\n"
+            "    mipMapFadeDistanceStart: 1\n"
+            "    mipMapFadeDistanceEnd: 3\n"
+            "  bumpmap:\n"
+            "    convertToNormalMap: 0\n"
+            "    externalNormalMap: 0\n"
+            "    heightScale: .25\n"
+            "    normalMapFilter: 0\n"
             "  isReadable: 0\n"
+            "  grayScaleToAlpha: 0\n"
+            "  generateCubemap: 0\n"
             "  textureFormat: -3\n"
             "  maxTextureSize: 512\n"
             "  textureSettings:\n"
@@ -104,8 +122,14 @@ def write_meta(path):
             "    mipBias: -1\n"
             "    wrapMode: 1\n"
             "  nPOTScale: 0\n"
+            "  lightmap: 0\n"
+            "  compressionQuality: 50\n"
             "  textureType: 5\n"
-            "  alphaIsTransparency: 1\n" % uuid.uuid4().hex)
+            "  buildTargetSettings:\n"
+            "  - buildTarget: Standalone\n"
+            "    maxTextureSize: 512\n"
+            "    textureFormat: -3\n"
+            "    compressionQuality: 100\n" % guid)
 
 
 def folder_meta(path):

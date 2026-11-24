@@ -720,7 +720,21 @@ public class uScriptDefaultStyle : uScriptStyle
          var name = System.IO.Path.GetFileName(file.Name);
 
          var styleBackground = UnityEditor.AssetDatabase.LoadAssetAtPath(relativePath + "/" + name, typeof(Texture2D)) as Texture2D;
+
+         if (styleBackground == null && this.modern)
+         {
+            // A Modern texture that Unity has not imported (yet): use the Classic one so the canvas still works
+            var classicPath = uScriptConfig.ConstantPaths.RelativePath(uScriptConfig.ConstantPaths.Skin + "/elements");
+            styleBackground = UnityEditor.AssetDatabase.LoadAssetAtPath(classicPath + "/" + name, typeof(Texture2D)) as Texture2D;
+            UnityEngine.Debug.LogWarning("uScript: the Modern theme texture " + name + " could not be loaded, so the Classic one is used. Reimporting the uScript package may fix this.");
+         }
+
          uScriptDebug.Assert(styleBackground != null, string.Format("The style background texture could not be loaded: {0}", name));
+         if (styleBackground == null)
+         {
+            continue;
+         }
+
          styleBackground.wrapMode = TextureWrapMode.Clamp;
 
          name = System.IO.Path.GetFileNameWithoutExtension(name);
