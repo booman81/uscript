@@ -33,6 +33,11 @@ public static class uScriptNodeIcons
       Rule("UnityEditor.SceneAsset", "scene", "level"),
       Rule("UnityEngine.RectTransform", "ui", "canvas", "slider", "scroll"),
       Rule("UnityEngine.Transform", "transform", "position", "rotation", "rotate", "scale", "parent", "lookat", "translate", "quaternion", "move"),
+   };
+
+   /// <summary>Checked after the drawn icons, because "(GameObject)" appears in many names that are really about lists, loops or comparisons.</summary>
+   private static readonly KeyValuePair<string[], string>[] FallbackUnityTypeRules =
+   {
       Rule("UnityEngine.GameObject", "gameobject", "gameobjects", "spawn", "instantiate", "destroy", "tag", "prefab", "active", "child", "children"),
    };
 
@@ -42,8 +47,8 @@ public static class uScriptNodeIcons
       Rule("signal", "signal", "signals", "broadcast", "message"),
       Rule("set", "set", "assign", "store"),
       Rule("timer", "delay", "timer", "wait", "time", "cooldown", "seconds"),
-      Rule("loop", "loop", "foreach", "repeat", "while", "iterate"),
-      Rule("list", "list", "lists", "array", "index", "append", "insert", "shuffle"),
+      Rule("loop", "loop", "foreach", "each", "repeat", "while", "iterate"),
+      Rule("list", "list", "lists", "array", "index", "append", "insert", "shuffle", "inlist"),
       Rule("compare", "compare", "equal", "equals", "greater", "less"),
       Rule("math", "add", "subtract", "multiply", "divide", "int", "float", "round", "exponent", "logarithmic",
          "clamp", "random", "rng", "min", "max", "abs", "lerp", "math", "modulo", "sqrt", "sin", "cos", "power", "increment", "decrement"),
@@ -160,6 +165,18 @@ public static class uScriptNodeIcons
          if (rule.Key.Any(words.Contains))
          {
             return GetDrawn(rule.Value);
+         }
+      }
+
+      foreach (var rule in FallbackUnityTypeRules)
+      {
+         if (rule.Key.Any(words.Contains))
+         {
+            var unityIcon = UnityIcon(rule.Value);
+            if (unityIcon != null)
+            {
+               return unityIcon;
+            }
          }
       }
 

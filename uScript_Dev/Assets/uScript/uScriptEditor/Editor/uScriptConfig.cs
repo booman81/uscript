@@ -86,7 +86,8 @@ public static class uScriptConfig
          skin = ConstantPaths.Skin;
       }
 
-      CanvasBackgroundTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(skin) + "/uscript_background.png", typeof(Texture2D)) as Texture2D;
+      canvasBackgroundPath = ConstantPaths.RelativePath(skin) + "/uscript_background.png";
+      CanvasBackgroundTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(canvasBackgroundPath, typeof(Texture2D)) as Texture2D;
       Style = new uScriptDefaultStyle(skin, IsModern);
 
       if (classicLineColors != null)
@@ -174,7 +175,28 @@ public static class uScriptConfig
       ApplyTheme();
    }
 
-   public static Texture2D CanvasBackgroundTexture { get; private set; }
+   private static Texture2D canvasBackgroundTexture;
+
+   private static string canvasBackgroundPath;
+
+   /// <summary>The canvas background. Loaded again when it was not imported yet at startup (for example right after a package update).</summary>
+   public static Texture2D CanvasBackgroundTexture
+   {
+      get
+      {
+         if (canvasBackgroundTexture == null && canvasBackgroundPath != null)
+         {
+            canvasBackgroundTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(canvasBackgroundPath, typeof(Texture2D)) as Texture2D;
+         }
+
+         return canvasBackgroundTexture;
+      }
+
+      private set
+      {
+         canvasBackgroundTexture = value;
+      }
+   }
    
    public static Texture2D LineTexture { get; private set; }
 
