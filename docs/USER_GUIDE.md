@@ -13,6 +13,7 @@ For the basics of visual scripting in uScript (nodes, links, variables, events, 
 - [Variables tab](#variables-tab)
 - [Finding errors](#finding-errors)
 - [Faster saves](#faster-saves)
+- [Modern theme](#modern-theme)
 - [AI assistant tools (MCP)](#ai-assistant-tools-mcp)
 - [New nodes](#new-nodes)
 - [Shortcuts](#shortcuts)
@@ -226,6 +227,26 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 - Assemblies a graph needs (for example TextMeshPro or the Input System) are added automatically when you save.
 - If a graph starts using a script from `Assembly-CSharp`, uScript tells you and offers to turn the option off.
 - Turn it off again from the same menu item.
+
+---
+
+## Modern theme
+
+uScript has two canvas looks. Switch with **View > Theme** or in the Preferences under **Canvas Look**. The change is
+immediate, and graphs are not touched: every node keeps exactly the same size and position in both themes.
+
+- **Classic**: the original uScript look.
+- **Modern**: a dark canvas, rounded nodes with a title bar, round sockets colored by type (blue for In/Out, orange
+  for event outputs, purple GameObject, red bool, green string, cyan int, blue float), lighter links and round
+  variables that stretch into a pill when selected. Event nodes have an orange title bar.
+
+**Node icons** (Modern theme, can be turned off in the Preferences): events get a lightning bolt, nodes about a Unity
+object get Unity's own icon for it (Animator, Camera, Rigidbody, Transform, GameObject...), and other nodes get a
+small icon chosen from their name (compare, set, math, list, string, signal, timer, loop, input, debug). An icon is only
+drawn when it fits next to the title, so it never makes a node wider.
+
+**Grid dots**: turn on **View > Grid Dots** (or Grid Style in the Preferences) to draw the grid as dots instead of lines.
+It works with both themes. The grid itself is still switched on and off with **View > Grid**.
 
 ---
 

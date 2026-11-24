@@ -124,9 +124,34 @@ namespace Detox.Editor.GUI.Windows
 
       private static void DrawGridSettings()
       {
+         GUILayout.Label("Canvas Look", EditorStyles.boldLabel);
+
+         var theme = EditorGUILayout.Popup(
+            new GUIContent("Theme", "Classic is the original uScript look. Modern is darker, with rounded nodes and round sockets. Graphs are not changed."),
+            Preferences.Theme,
+            new[] { new GUIContent("Classic"), new GUIContent("Modern") });
+         if (theme != Preferences.Theme)
+         {
+            Preferences.Theme = theme;
+            uScript.RequestRepaint();
+         }
+
+         Preferences.ShowNodeIcons = EditorGUILayout.Toggle(
+            new GUIContent("Node Icons", "Modern theme: small icons in node title bars, when there is room."),
+            Preferences.ShowNodeIcons);
+
+         EditorGUILayout.Separator();
+
          GUILayout.Label("Grid Settings", EditorStyles.boldLabel);
 
          Preferences.ShowGrid = EditorGUILayout.Toggle("Show Grid", Preferences.ShowGrid);
+
+         var dots = EditorGUILayout.Popup("Grid Style", Preferences.GridDots ? 1 : 0, new[] { "Lines", "Dots" }) == 1;
+         if (dots != Preferences.GridDots)
+         {
+            Preferences.GridDots = dots;
+            uScript.RequestRepaint();
+         }
 
          var intValue = EditorGUILayout.IntField("Grid Size", Preferences.GridSize);
          Preferences.GridSize = Mathf.Min(MaxGridSize, Mathf.Max(MinGridSize, intValue));

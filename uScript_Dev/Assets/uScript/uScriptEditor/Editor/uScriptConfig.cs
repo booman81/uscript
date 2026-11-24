@@ -43,14 +43,64 @@ public static class uScriptConfig
    //private static Texture2D nodeVariableTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/uscript_node_variable_color.png", typeof(Texture2D)) as Texture2D;
    //private static Texture2D minimapScreenBorder = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/uscript_minimap_screen_border.png", typeof(Texture2D)) as Texture2D;
 
+   /// <summary>EditorPrefs key of the canvas theme (0 = Classic, 1 = Modern).</summary>
+   public const string ThemePrefKey = "DetoxStudios.uScript.Theme";
+
+   /// <summary>True when the Modern canvas theme is in use.</summary>
+   public static bool IsModern { get; private set; }
+
+   /// <summary>Modern theme: color of the links between In/Out sockets.</summary>
+   public static readonly Color ModernFlowLinkColor = new Color(205 / 255f, 212 / 255f, 228 / 255f);
+
+   /// <summary>Modern theme grid colors (lines or dots).</summary>
+   public static readonly Color ModernGridMajor = new Color(58 / 255f, 64 / 255f, 82 / 255f);
+   public static readonly Color ModernGridMinor = new Color(40 / 255f, 44 / 255f, 58 / 255f);
+
+   private static Color[] classicLineColors;
+
+   private static readonly Color[] ModernLineColors =
+   {
+      new Color(200 / 255f, 205 / 255f, 215 / 255f), // default
+      new Color(90 / 255f, 210 / 255f, 120 / 255f),  // string
+      new Color(240 / 255f, 80 / 255f, 90 / 255f),   // bool
+      new Color(80 / 255f, 130 / 255f, 255 / 255f),  // float
+      new Color(60 / 255f, 200 / 255f, 230 / 255f),  // int
+      new Color(240 / 255f, 200 / 255f, 100 / 255f), // vector3
+      new Color(190 / 255f, 100 / 255f, 255 / 255f), // gameobject
+      new Color(245 / 255f, 160 / 255f, 240 / 255f), // object
+      new Color(235 / 255f, 240 / 255f, 250 / 255f)  // selected
+   };
+
+   /// <summary>
+   /// Switches the canvas between the Classic and Modern themes (see Preferences.Theme). Only the look changes:
+   /// every Modern texture has the same size and layout as its Classic twin, so node sizes stay identical.
+   /// </summary>
+   public static void ApplyTheme()
+   {
+      IsModern = UnityEditor.EditorPrefs.GetInt(ThemePrefKey, 0) == 1;
+
+      var skin = IsModern ? ConstantPaths.SkinModern : ConstantPaths.Skin;
+      if (IsModern && !System.IO.Directory.Exists(skin + "/elements"))
+      {
+         IsModern = false;
+         skin = ConstantPaths.Skin;
+      }
+
+      CanvasBackgroundTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(skin) + "/uscript_background.png", typeof(Texture2D)) as Texture2D;
+      Style = new uScriptDefaultStyle(skin, IsModern);
+
+      if (classicLineColors != null)
+      {
+         LineColors = IsModern ? ModernLineColors : classicLineColors;
+      }
+   }
+
    static uScriptConfig()
    {
-      CanvasBackgroundTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/uscript_background.png", typeof(Texture2D)) as Texture2D;
       LineTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/icons/uscript_line.png", typeof(Texture2D)) as Texture2D;
       PointerLineEnd = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/icons/uscript_pointer_line_end.png", typeof(Texture2D)) as Texture2D;
       ResizeTexture = UnityEditor.AssetDatabase.LoadAssetAtPath(ConstantPaths.RelativePath(ConstantPaths.Skin) + "/icons/uscript_icon_resize_comment.png", typeof(Texture2D)) as Texture2D;
 
-      Style = new uScriptDefaultStyle();
 
       Variables = new[]
                      {
@@ -119,6 +169,9 @@ public static class uScriptConfig
                       };
 
       LineWidths = new[] { 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.5f, 2.75f };
+
+      classicLineColors = LineColors;
+      ApplyTheme();
    }
 
    public static Texture2D CanvasBackgroundTexture { get; private set; }
@@ -236,6 +289,7 @@ public static class uScriptConfig
 
          Gizmos = string.Format("{0}/Editor/_Gizmos", Editor);
          Skin = string.Format("{0}/Editor/_GUI/uScriptDefault", Editor);
+         SkinModern = string.Format("{0}/Editor/_GUI/uScriptModern", Editor);
          Skins = string.Format("{0}/Editor/Skins", Editor);
          Templates = string.Format("{0}/Editor/_Templates", Editor);
 
@@ -256,6 +310,8 @@ public static class uScriptConfig
       public static string RuntimeNodes { get; private set; }
 
       public static string Skin { get; private set; }
+
+      public static string SkinModern { get; private set; }
 
       public static string Skins { get; private set; }
 
@@ -441,6 +497,22 @@ public abstract class uScriptStyle
 public class uScriptDefaultStyle : uScriptStyle
 {
    private readonly Dictionary<string, GUIStyle> styles = new Dictionary<string, GUIStyle>();
+
+   private readonly string skinPath;
+
+   private readonly bool modern;
+
+   public uScriptDefaultStyle() : this(uScriptConfig.ConstantPaths.Skin, false)
+   {
+   }
+
+   /// <param name="skinPath">Folder with the "elements" textures (Classic or Modern).</param>
+   /// <param name="modern">Use the Modern theme's text colors.</param>
+   public uScriptDefaultStyle(string skinPath, bool modern)
+   {
+      this.skinPath = skinPath;
+      this.modern = modern;
+   }
 
    //how many pixels to adjust the variable socket value text left (+) or right (-) (horizontal)
    public override int SocketValueTextHorizontalOffset { get { return 2; } }
@@ -635,7 +707,7 @@ public class uScriptDefaultStyle : uScriptStyle
          fontSize = 0
       };
 
-      var assetPath = uScriptConfig.ConstantPaths.Skin + "/elements";
+      var assetPath = this.skinPath + "/elements";
 
       // Use the absolute path for file IO (packages installed from git are not under the project folder)
       var directory = new System.IO.DirectoryInfo(assetPath);
@@ -808,6 +880,40 @@ public class uScriptDefaultStyle : uScriptStyle
          fontStyle = FontStyle.Normal,
          fontSize = 0
       };
+
+      if (this.modern)
+      {
+         this.ApplyModernTextColors();
+      }
+   }
+
+   /// <summary>Modern theme: light text on the dark nodes and canvas. Fonts and sizes stay the same as Classic.</summary>
+   private void ApplyModernTextColors()
+   {
+      var title = new Color(232 / 255f, 235 / 255f, 242 / 255f);
+      var label = new Color(200 / 255f, 205 / 255f, 216 / 255f);
+      var value = new Color(150 / 255f, 158 / 255f, 176 / 255f);
+
+      foreach (var pair in this.styles)
+      {
+         var name = pair.Key;
+         var style = pair.Value;
+
+         if (name.StartsWith("node") && !name.Contains("socket"))
+         {
+            style.normal.textColor = title;
+         }
+         else if (name.StartsWith("comment") || name.StartsWith("externalconnection"))
+         {
+            style.normal.textColor = title;
+         }
+      }
+
+      this.styles["socket_text"].normal.textColor = label;
+      this.styles["socket_text_bold"].normal.textColor = label;
+      this.styles["title_comment"].normal.textColor = title;
+      this.styles["value_text"].normal.textColor = value;
+      this.styles["externalconnection_text"].normal.textColor = title;
    }
 
    public override GUIStyle Get(string name)

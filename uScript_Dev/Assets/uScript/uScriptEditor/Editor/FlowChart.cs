@@ -1699,6 +1699,78 @@ namespace Detox.FlowChart
          return (Rect)property.GetValue(null, null);
       }
 
+      private static UnityEngine.Texture2D s_DotTexture;
+      private static UnityEngine.Texture2D s_MajorDotTexture;
+
+      /// <summary>A repeating tile with one soft dot in its corner, made in code (no asset needed).</summary>
+      private static UnityEngine.Texture2D MakeDotTexture(float radius)
+      {
+         const int TileSize = 32;
+         var texture = new UnityEngine.Texture2D(TileSize, TileSize, UnityEngine.TextureFormat.RGBA32, false)
+         {
+            wrapMode = UnityEngine.TextureWrapMode.Repeat,
+            filterMode = UnityEngine.FilterMode.Bilinear,
+            hideFlags = UnityEngine.HideFlags.HideAndDontSave
+         };
+
+         var pixels = new UnityEngine.Color32[TileSize * TileSize];
+         for (int y = 0; y < TileSize; y++)
+         {
+            for (int x = 0; x < TileSize; x++)
+            {
+               // distance to the nearest tile corner, so the dot sits on the grid intersection
+               float dx = Mathf.Min(x + 0.5f, TileSize - x - 0.5f);
+               float dy = Mathf.Min(y + 0.5f, TileSize - y - 0.5f);
+               float alpha = Mathf.Clamp01(radius + 0.5f - Mathf.Sqrt(dx * dx + dy * dy));
+               pixels[y * TileSize + x] = new UnityEngine.Color32(255, 255, 255, (byte)(alpha * 255));
+            }
+         }
+
+         texture.SetPixels32(pixels);
+         texture.Apply();
+         return texture;
+      }
+
+      /// <summary>Dots at the grid intersections, bigger at major lines. Two tiled draws, so it stays fast.</summary>
+      private void DrawGridDots( )
+      {
+         if (UnityEngine.Event.current.type != UnityEngine.EventType.Repaint)
+         {
+            return;
+         }
+
+         if (s_DotTexture == null) s_DotTexture = MakeDotTexture(2.2f);
+         if (s_MajorDotTexture == null) s_MajorDotTexture = MakeDotTexture(3.4f);
+
+         float width = uScript.Instance.NodeWindowRect.width / Zoom;
+         float height = uScript.Instance.NodeWindowRect.height / Zoom;
+         var area = new UnityEngine.Rect(0, 0, width, height);
+
+         UnityEngine.Color minor = uScriptConfig.IsModern ? new UnityEngine.Color(0.24f, 0.26f, 0.33f) : Preferences.GridColorMinor;
+         UnityEngine.Color major = uScriptConfig.IsModern ? new UnityEngine.Color(0.32f, 0.35f, 0.44f) : Preferences.GridColorMajor;
+
+         DrawDotLayer(area, s_DotTexture, Preferences.GridSize, minor);
+
+         int subdivisions = Mathf.Max(1, (int)Preferences.GridSubdivisions);
+         if (subdivisions > 1)
+         {
+            DrawDotLayer(area, s_MajorDotTexture, Preferences.GridSize * subdivisions, major);
+         }
+      }
+
+      private void DrawDotLayer(UnityEngine.Rect area, UnityEngine.Texture2D texture, float spacing, UnityEngine.Color color)
+      {
+         // Texture coordinates in "tiles": one tile per grid cell, shifted with the canvas scroll position.
+         float offsetX = -(Location.X % spacing) / spacing;
+         float offsetY = (Location.Y % spacing) / spacing;
+         var coords = new UnityEngine.Rect(offsetX, offsetY - area.height / spacing, area.width / spacing, area.height / spacing);
+
+         var previous = UnityEngine.GUI.color;
+         UnityEngine.GUI.color = color;
+         UnityEngine.GUI.DrawTextureWithTexCoords(area, texture, coords, true);
+         UnityEngine.GUI.color = previous;
+      }
+
       public override void OnPaint(PaintEventArgs e)
       {
          // Abort if the NodeWindowRect hasn't been initialized yet
@@ -1760,9 +1832,15 @@ namespace Detox.FlowChart
          Rectangle visibleRect = new Rectangle(0,0, (int)(uScript.Instance.NodeWindowRect.width / Zoom), (int)(uScript.Instance.NodeWindowRect.height / Zoom));
 
          //if ( 1.0f == Zoom && Preferences.ShowGrid == true )
-         if ( Preferences.ShowGrid == true )
+         if ( Preferences.ShowGrid == true && Preferences.GridDots && Preferences.GridSize > 0 )
+         {
+            DrawGridDots( );
+         }
+         else if ( Preferences.ShowGrid == true )
          {
             float g;
+            UnityEngine.Color gridMajor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMajor : Preferences.GridColorMajor;
+            UnityEngine.Color gridMinor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMinor : Preferences.GridColorMinor;
 
             int gridSize = Preferences.GridSize;
 
@@ -1783,12 +1861,12 @@ namespace Detox.FlowChart
             {
                if ( gridSubdivisionCount == gridSubdivisions )
                {
-                  Handles.color = Preferences.GridColorMajor;
+                  Handles.color = gridMajor;
                   gridSubdivisionCount = 0;
                }
                else
                {
-                  Handles.color = Preferences.GridColorMinor;
+                  Handles.color = gridMinor;
                }
 
                Handles.DrawLine( startGrid, endGrid );
@@ -1812,12 +1890,12 @@ namespace Detox.FlowChart
             {
                if ( gridSubdivisionCount == gridSubdivisions )
                {
-                  Handles.color = Preferences.GridColorMajor;
+                  Handles.color = gridMajor;
                   gridSubdivisionCount = 0;
                }
                else
                {
-                  Handles.color = Preferences.GridColorMinor;
+                  Handles.color = gridMinor;
                }
 
                Handles.DrawLine( startGrid, endGrid );
@@ -1991,7 +2069,9 @@ namespace Detox.FlowChart
                if ( -1 == lineWidth )
                {
                   lineWidth = pen.Width;
-                  lineColor = new UnityEngine.Color(pen.Color.FR, pen.Color.FG, pen.Color.FB);
+                  lineColor = uScriptConfig.IsModern
+                     ? uScriptConfig.ModernFlowLinkColor
+                     : new UnityEngine.Color(pen.Color.FR, pen.Color.FG, pen.Color.FB);
                }
             }
 

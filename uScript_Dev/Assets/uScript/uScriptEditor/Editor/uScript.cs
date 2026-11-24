@@ -3380,7 +3380,10 @@ public sealed partial class uScript : EditorWindow
       menu.AddItem(uScriptGUIContent.ViewMenuItemFileListPanel, uScript.Instance.ScriptsVisible, this.CommandCanvasShowFileListPanel);
       menu.AddItem(new GUIContent("Show Panels/Minimap  (M)"), ShowMinimap, this.CommandToggleMinimap);
       menu.AddSeparator(string.Empty);
+      menu.AddItem(new GUIContent("Theme/Classic"), Preferences.Theme == 0, () => { Preferences.Theme = 0; uScript.RequestRepaint(); });
+      menu.AddItem(new GUIContent("Theme/Modern"), Preferences.Theme == 1, () => { Preferences.Theme = 1; uScript.RequestRepaint(); });
       menu.AddItem(uScriptGUIContent.ViewMenuItemGrid, Preferences.ShowGrid, CommandViewMenuGrid);
+      menu.AddItem(new GUIContent("Grid Dots"), Preferences.GridDots, () => { Preferences.GridDots = !Preferences.GridDots; uScript.RequestRepaint(); });
       menu.AddItem(uScriptGUIContent.ViewMenuItemSnap, Preferences.GridSnap, CommandViewMenuSnap);
       menu.AddDisabledItem(uScriptGUIContent.ViewMenuItemSnapSelected);
       menu.AddSeparator(string.Empty);

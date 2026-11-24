@@ -130,6 +130,34 @@ namespace Detox.Editor
          }
       }
 
+      /// <summary>Canvas theme: 0 = Classic, 1 = Modern.</summary>
+      public static int Theme
+      {
+         get { return EditorPrefs.GetInt(uScriptConfig.ThemePrefKey, 0); }
+         set
+         {
+            if (value != Theme)
+            {
+               EditorPrefs.SetInt(uScriptConfig.ThemePrefKey, value);
+               uScriptConfig.ApplyTheme();
+            }
+         }
+      }
+
+      /// <summary>Draw the canvas grid as dots instead of lines.</summary>
+      public static bool GridDots
+      {
+         get { return EditorPrefs.GetBool("DetoxStudios.uScript.GridDots", false); }
+         set { EditorPrefs.SetBool("DetoxStudios.uScript.GridDots", value); }
+      }
+
+      /// <summary>Show small icons in node title bars (Modern theme).</summary>
+      public static bool ShowNodeIcons
+      {
+         get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowNodeIcons", true); }
+         set { EditorPrefs.SetBool("DetoxStudios.uScript.ShowNodeIcons", value); }
+      }
+
       public static bool ShowGrid
       {
          get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowGrid"); }

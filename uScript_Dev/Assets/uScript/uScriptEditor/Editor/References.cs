@@ -1073,10 +1073,42 @@ namespace Detox.Drawing
 
             if (nameSize.x < rectangle.Width * 1.5f)
             {
+               float titleX = rectangle.Left + (rectangle.Width * 0.5f) - (nameSize.x * 0.5f);
+
+               // Modern theme: a small icon left of the title, only when it fits, so node sizes never change
+               if (uScriptConfig.IsModern && Detox.Editor.Preferences.ShowNodeIcons && styleName.StartsWith("node") && node is Detox.ScriptEditor.DisplayNode)
+               {
+                  const float IconSize = 12f;
+                  const float IconGap = 4f;
+                  float usable = rectangle.Width - uScriptConfig.Style.RightShadow - 6f;
+
+                  if (nameSize.x + IconSize + IconGap <= usable)
+                  {
+                     bool tint;
+                     bool isEvent = node.UnselectedStyleName != null && node.UnselectedStyleName.Contains("event");
+                     Texture icon = uScriptNodeIcons.For(((Detox.ScriptEditor.DisplayNode)node).EntityNode, isEvent, out tint);
+
+                     if (icon != null)
+                     {
+                        titleX += (IconSize + IconGap) * 0.5f;
+                        var iconRect = new Rect(titleX - IconGap - IconSize + nameStyle.padding.left * 0.5f, rectangle.Top + 3f, IconSize, IconSize);
+
+                        var previous = GUI.color;
+                        if (tint)
+                        {
+                           GUI.color = nameStyle.normal.textColor;
+                        }
+
+                        GUI.DrawTexture(iconRect, icon, ScaleMode.ScaleToFit, true);
+                        GUI.color = previous;
+                     }
+                  }
+               }
+
                // use rectanble.Height instead of nameSize.y, because
                // named variables should have their name beneath the node.
                //
-               GUI.Label(new Rect(rectangle.Left + (rectangle.Width * 0.5f) - (nameSize.x * 0.5f), rectangle.Top,
+               GUI.Label(new Rect(titleX, rectangle.Top,
                                   nameSize.x, rectangle.Height), nameContent, nameStyle);
             }
          }
