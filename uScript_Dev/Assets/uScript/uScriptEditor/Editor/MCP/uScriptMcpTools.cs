@@ -287,6 +287,22 @@ namespace uScriptMcp
          string comment = entity.Comment.Default;
          if (!string.IsNullOrEmpty(comment)) node["comment"] = comment;
 
+         if (Detox.ScriptEditor.ListBox.Is(entity))
+         {
+            var box = (EntityProperty)entity;
+            var settings = Detox.ScriptEditor.ListBox.Read(box);
+            var info = new Dictionary<string, object>();
+            info["find_by"] = settings.FindBy.ToString();
+            info[settings.FindBy == uScript_ListBoxFindBy.Key ? "key" : "index"] = settings.Selector ?? "";
+            if (settings.SelectorIsVariable) info["selector_is_variable_name"] = true;
+            if (Detox.ScriptEditor.ListBox.SocketLinked(view.Script, box, Detox.ScriptEditor.ListBox.SelectorName)) info["selector_from_socket"] = true;
+            info["gives"] = box.Parameter.Type;
+            if (!string.IsNullOrEmpty(settings.Default)) info["default_if_missing"] = settings.Default;
+            if (settings.ShowDefaultSocket) info["default_socket_shown"] = true;
+            if (settings.AddIfMissing) info["add_key_if_missing"] = true;
+            node["list_box"] = info;
+         }
+
          var inputNames = new HashSet<string>();
 
          if (entity is CommentNode)
