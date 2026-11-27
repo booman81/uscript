@@ -5216,14 +5216,14 @@ namespace Detox.ScriptEditor
             }
          }
 
-         //which item: a variable linked to the Position/Key socket, a named variable, or a fixed position or key
+         //which item: a variable linked to the Index/Key socket, a named variable, or a fixed index or key
          string selector;
 
          string selectorValue = ListBoxSocketValue(listBox, ListBox.SelectorName);
 
          if (selectorValue != null)
          {
-            selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Position(") + selectorValue + ")";
+            selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Index(") + selectorValue + ")";
          }
          else if (settings.SelectorIsVariable)
          {
@@ -5236,7 +5236,7 @@ namespace Detox.ScriptEditor
             }
             else
             {
-               selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Position(") + CSharpName(variable) + ")";
+               selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Index(") + CSharpName(variable) + ")";
             }
          }
          else if (byKey)
@@ -5245,7 +5245,7 @@ namespace Detox.ScriptEditor
          }
          else
          {
-            selector = uScript_ListBox.Position(settings.Selector).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            selector = uScript_ListBox.Index(settings.Selector).ToString(System.Globalization.CultureInfo.InvariantCulture);
          }
 
          string read;

@@ -1,10 +1,10 @@
-// List Box: a canvas box that reads or writes one item of a list, picked by position or by key.
+// List Box: a canvas box that reads or writes one item of a list, picked by index or by key.
 //
 // A List Box is stored as a property box (EntityProperty), so saving, loading, copy/paste, undo, links and
 // the code generator's "read before use / write after set" handling all work as they do for property boxes.
 // What makes it a List Box is its ComponentType, which starts with "uScript_ListBox" and also holds its settings:
 //
-//    uScript_ListBox|<Position or Key>|<selector>|<1 if the selector is a variable name, else 0>
+//    uScript_ListBox|<Index or Key>|<selector>|<1 if the selector is a variable name, else 0>
 //
 //    Instance  = the List socket (its Type is the list type, such as System.String[])
 //    Parameter = the Value socket (its Type is what the box gives out)
@@ -20,15 +20,15 @@ namespace Detox.ScriptEditor
 
       public const string ValueName = "Value";
 
-      /// <summary>The socket next to List that takes the position or key from a variable.</summary>
+      /// <summary>The socket next to List that takes the index or key from a variable.</summary>
       public const string SelectorName = "Selector";
 
-      /// <summary>The Position/Key socket. It accepts any variable: numbers, text, or others.</summary>
+      /// <summary>The Index/Key socket. It accepts any variable: numbers, text, or others.</summary>
       public static Parameter SelectorParameter(EntityProperty box)
       {
          var selector = new Parameter();
          selector.Name = SelectorName;
-         selector.FriendlyName = Read(box).FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Position";
+         selector.FriendlyName = Read(box).FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Index";
          selector.Type = "System.Object";
          selector.AutoLinkType = "System.Object";
          selector.Default = string.Empty;
@@ -57,7 +57,7 @@ namespace Detox.ScriptEditor
          return missing;
       }
 
-      /// <summary>The extra bottom sockets after List: Position/Key, and Default when shown.</summary>
+      /// <summary>The extra bottom sockets after List: Index/Key, and Default when shown.</summary>
       public static Parameter[] ExtraParameters(EntityProperty box)
       {
          if (Read(box).ShowDefaultSocket && HasDefault(box))
@@ -81,7 +81,7 @@ namespace Detox.ScriptEditor
          return Parameter.Empty;
       }
 
-      /// <summary>True when a link is connected to the box's Position/Key socket.</summary>
+      /// <summary>True when a link is connected to the box's Index/Key socket.</summary>
       public static bool SelectorLinked(ScriptEditor script, EntityProperty box)
       {
          return SocketLinked(script, box, SelectorName);
@@ -103,7 +103,7 @@ namespace Detox.ScriptEditor
       {
          public uScript_ListBoxFindBy FindBy;
 
-         /// <summary>A position ("3", "-1"), a key ("Health"), or a variable's name when SelectorIsVariable is set.</summary>
+         /// <summary>An index ("0", "-1"), a key ("Health"), or a variable's name when SelectorIsVariable is set.</summary>
          public string Selector;
 
          public bool SelectorIsVariable;
@@ -114,7 +114,7 @@ namespace Detox.ScriptEditor
          /// <summary>What the box gives when the item is missing. Empty = 0, empty text or False.</summary>
          public string Default;
 
-         /// <summary>Shows a Default socket after List and Position/Key, to take the default from a variable.</summary>
+         /// <summary>Shows a Default socket after List and Index/Key, to take the default from a variable.</summary>
          public bool ShowDefaultSocket;
       }
 
@@ -146,7 +146,7 @@ namespace Detox.ScriptEditor
          return box.Instance.Type == "System.String[]";
       }
 
-      /// <summary>A new List Box for a list of the given type. String lists start in Key mode, others by position 1.</summary>
+      /// <summary>A new List Box for a list of the given type. String lists start in Key mode, others by index 0.</summary>
       public static EntityProperty Create(string listType)
       {
          bool strings = listType == "System.String[]";
@@ -154,8 +154,8 @@ namespace Detox.ScriptEditor
 
          var settings = new Settings
          {
-            FindBy = strings ? uScript_ListBoxFindBy.Key : uScript_ListBoxFindBy.Position,
-            Selector = strings ? string.Empty : "1",
+            FindBy = strings ? uScript_ListBoxFindBy.Key : uScript_ListBoxFindBy.Index,
+            Selector = strings ? string.Empty : "0",
             SelectorIsVariable = false
          };
 
@@ -177,7 +177,7 @@ namespace Detox.ScriptEditor
 
       public static Settings Read(string componentType)
       {
-         var settings = new Settings { FindBy = uScript_ListBoxFindBy.Position, Selector = "1", SelectorIsVariable = false };
+         var settings = new Settings { FindBy = uScript_ListBoxFindBy.Index, Selector = "0", SelectorIsVariable = false };
          if (!Is(componentType))
          {
             return settings;
@@ -222,7 +222,7 @@ namespace Detox.ScriptEditor
          return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0") + "|" + Escape(settings.Default ?? string.Empty) + "|" + (settings.ShowDefaultSocket ? "1" : "0");
       }
 
-      /// <summary>Second line of the box, such as: Key "Health" · float, or: Position = Selected_Index.</summary>
+      /// <summary>Second line of the box, such as: Key "Health" · float, or: Index = Selected_Index.</summary>
       public static string Describe(EntityProperty box)
       {
          return Describe(box, false);
@@ -236,19 +236,19 @@ namespace Detox.ScriptEditor
 
          if (selectorLinked)
          {
-            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from socket" : "Position from socket";
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from socket" : "Index from socket";
          }
          else if (settings.SelectorIsVariable)
          {
-            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from variable" : "Position from variable";
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from variable" : "Index from variable";
          }
          else if (selector.Length == 0)
          {
-            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key not set" : "Position not set";
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key not set" : "Index not set";
          }
          else
          {
-            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "By Key" : "By Position";
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "By Key" : "By Index";
          }
 
          if (IsStringList(box) && box.Parameter.Type != "System.String")
@@ -283,31 +283,31 @@ namespace Detox.ScriptEditor
          "2. Select the box and choose the item in the Properties panel.\n" +
          "3. Link the box into the nodes that need the value.\n\n" +
          "CHOOSING THE ITEM\n" +
-         "\u2022 Find By Position: 1 = first item, 2 = second, -1 = last, -2 = second to last.\n" +
+         "\u2022 Find By Index: 0 = first item, 1 = second, -1 = last, -2 = second to last.\n" +
          "\u2022 Find By Key (text lists only): for a list like \"Health, 3, Damage, 6\", the key Health gives 3. " +
          "Keys ignore upper/lower case and spaces around them.\n" +
-         "\u2022 Position/Key socket: link a variable into the second socket at the bottom of the box (next to List). " +
+         "\u2022 Index/Key socket: link a variable into the second socket at the bottom of the box (next to List). " +
          "Its value picks the item, instead of what is typed in the Properties panel.\n" +
          "\u2022 Use Variable: turn it on and type the name of a graph variable (for example Selected_Index) " +
-         "in the Position or Key field. The variable's current value picks the item every time the box is used.\n" +
+         "in the Index or Key field. The variable's current value picks the item every time the box is used.\n" +
          "\u2022 Give Out As (text lists only): Text, Whole Number, Decimal or True/False. " +
          "\"12.5\" and \"12,5\" both read as 12.5; \"true\", \"1\", \"yes\" and \"on\" read as True.\n\n" +
          "EXAMPLES\n" +
          "\u2022 Stats list \"Health, 100, Damage, 6\": a box with Key Health, Give Out As Whole Number, gives 100. " +
          "Link it into Add Int, then link the result back into the box to save the new health.\n" +
-         "\u2022 Int list \"1, 12, 56\": Position 3 gives 56. Position -1 also gives 56.\n" +
-         "\u2022 GameObject list of spawn points: Use Variable on, Position = Spawn_Index, gives the current spawn point.\n\n" +
+         "\u2022 Int list \"1, 12, 56\": Index 2 gives 56. Index -1 also gives 56.\n" +
+         "\u2022 GameObject list of spawn points: Use Variable on, Index = Spawn_Index, gives the current spawn point.\n\n" +
          "GOOD TO KNOW\n" +
          "\u2022 The value is read fresh each time a node uses it, so it always matches the list.\n" +
-         "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
+         "\u2022 An index outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
          "Add new items with a list node.\n" +
-         "\u2022 Default Value: what the box gives when the key or position is missing (for example 100). " +
+         "\u2022 Default Value: what the box gives when the key or index is missing (for example 100). " +
          "Empty means 0, empty text or False. It is only for reading; it never changes the list. " +
-         "Tick Show Default Socket to add a Default socket after Position/Key and link a variable into it instead.\n" +
+         "Tick Show Default Socket to add a Default socket after Index/Key and link a variable into it instead.\n" +
          "\u2022 Add Key If Missing (Key mode): writing to a key that is not in the list adds the key and its value to the end, " +
          "for example writing 50 to Mana adds \"Mana, 50\".\n" +
          "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
-         "Key not set or Position not set means nothing is chosen yet.\n" +
+         "Key not set or Index not set means nothing is chosen yet.\n" +
          "\u2022 After changing Give Out As, re-link the box if a link no longer fits the new type.";
 
       public static string ParameterHelp(string parameterName)
@@ -322,8 +322,8 @@ namespace Detox.ScriptEditor
                return "Optional. Link a variable here to set the Default Value: what the box gives when the item is missing. " +
                       "When linked, it is used instead of the Default Value typed in the Properties panel.";
             case SelectorName:
-               return "Optional. Link a variable here to choose the item: a number for Position, or text for Key. " +
-                      "When linked, it is used instead of the Position or Key typed in the Properties panel.";
+               return "Optional. Link a variable here to choose the item: a number for Index, or text for Key. " +
+                      "When linked, it is used instead of the Index or Key typed in the Properties panel.";
             default:
                return parameterName;
          }
@@ -346,7 +346,7 @@ namespace Detox.ScriptEditor
 
          parameters.AddRange(new[]
          {
-            Field("ListBoxSelector", settings.FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Position", "System.String", settings.Selector ?? string.Empty),
+            Field("ListBoxSelector", settings.FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Index", "System.String", settings.Selector ?? string.Empty),
             Field("ListBoxSelectorIsVariable", "Use Variable", "System.Boolean", settings.SelectorIsVariable ? "true" : "false"),
          });
 
@@ -376,7 +376,7 @@ namespace Detox.ScriptEditor
             switch (field.Name)
             {
                case "ListBoxFindBy":
-                  settings.FindBy = field.Default == "Key" ? uScript_ListBoxFindBy.Key : uScript_ListBoxFindBy.Position;
+                  settings.FindBy = field.Default == "Key" ? uScript_ListBoxFindBy.Key : uScript_ListBoxFindBy.Index;
                   break;
                case "ListBoxSelector":
                   settings.Selector = (field.Default ?? string.Empty).Trim();
@@ -406,7 +406,7 @@ namespace Detox.ScriptEditor
          //only text lists have keys
          if (!IsStringList(box))
          {
-            settings.FindBy = uScript_ListBoxFindBy.Position;
+            settings.FindBy = uScript_ListBoxFindBy.Index;
             settings.AddIfMissing = false;
          }
 

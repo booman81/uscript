@@ -238,23 +238,23 @@ A List Box reads or writes one item of a list, with no node in between. It works
 
 **Connect it:** link your list variable into the **List** socket at the bottom of the box. Link the box into any node input to read the item, or link a node output into it to write the item back to the list.
 
-**Pick the item from a socket:** link any variable into the **Position** (or **Key**) socket, next to **List** at the bottom of the box. Its value picks the item, and it wins over what is typed in the panel.
+**Pick the item from a socket:** link any variable into the **Index** (or **Key**) socket, next to **List** at the bottom of the box. Its value picks the item, and it wins over what is typed in the panel.
 
 **Or pick the item** in the properties panel:
 
 | Setting | What it does |
 |---|---|
-| Find By | **Position** or **Key** (Key is for text lists only). |
-| Position / Key | Position: 1 = first item, -1 = last. Key: for lists like `Health,3,Damage,6`, the key `Health` gives `3`. |
+| Find By | **Index** or **Key** (Key is for text lists only). |
+| Index / Key | Index: 0 = first item, -1 = last. Key: for lists like `Health,3,Damage,6`, the key `Health` gives `3`. |
 | Use Variable | On: type the **name** of a graph variable (for example `Selected_Index`) and its value picks the item each time. |
 | Add Key If Missing | Key mode: writing to a key that isn't in the list adds it to the end, e.g. writing 50 to `Mana` adds `Mana,50`. |
-| Default Value | What the box gives when the key or position is missing (e.g. `100`). Empty = 0, empty text or False. Reading only. |
-| Show Default Socket | Adds a **Default** socket after Position/Key. Link a variable into it to set the default from the graph. |
+| Default Value | What the box gives when the key or index is missing (e.g. `100`). Empty = 0, empty text or False. Reading only. |
+| Show Default Socket | Adds a **Default** socket after Index/Key. Link a variable into it to set the default from the graph. |
 | Give Out As | Text lists only: Text, Whole Number, Decimal or True/False. |
 
 Good to know:
 - The box always shows the current item. Writing to it changes the list itself.
-- A position outside the list, or a key that is missing, reads as empty or 0 and writes nothing. To add new keys, use a list node.
+- An index outside the list, or a key that is missing, reads as empty or 0 and writes nothing. To add new keys, use a list node.
 - Numbers are read and written the same way on every PC: `12.5` works, and so does `12,5`.
 - Graphs without List Boxes generate the same code as before.
 
