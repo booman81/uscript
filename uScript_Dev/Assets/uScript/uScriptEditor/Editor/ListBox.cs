@@ -60,6 +60,9 @@ namespace Detox.ScriptEditor
          public string Selector;
 
          public bool SelectorIsVariable;
+
+         /// <summary>Key mode: writing to a missing key adds the key and its value to the end of the list.</summary>
+         public bool AddIfMissing;
       }
 
       /// <summary>The list types offered in the Add menu, with their menu names.</summary>
@@ -143,12 +146,17 @@ namespace Detox.ScriptEditor
             settings.SelectorIsVariable = parts[3] == "1";
          }
 
+         if (parts.Length > 4)
+         {
+            settings.AddIfMissing = parts[4] == "1";
+         }
+
          return settings;
       }
 
       public static string Write(Settings settings)
       {
-         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0");
+         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0");
       }
 
       /// <summary>Second line of the box, such as: Key "Health" · float, or: Position = Selected_Index.</summary>
@@ -229,7 +237,9 @@ namespace Detox.ScriptEditor
          "GOOD TO KNOW\n" +
          "\u2022 The value is read fresh each time a node uses it, so it always matches the list.\n" +
          "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
-         "Add new items or keys with a list node.\n" +
+         "Add new items with a list node.\n" +
+         "\u2022 Add Key If Missing (Key mode): writing to a key that is not in the list adds the key and its value to the end, " +
+         "for example writing 50 to Mana adds \"Mana, 50\".\n" +
          "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
          "Key not set or Position not set means nothing is chosen yet.\n" +
          "\u2022 After changing Give Out As, re-link the box if a link no longer fits the new type.";
@@ -273,6 +283,7 @@ namespace Detox.ScriptEditor
 
          if (IsStringList(box))
          {
+            parameters.Add(Field("ListBoxAddIfMissing", "Add Key If Missing", "System.Boolean", settings.AddIfMissing ? "true" : "false"));
             parameters.Add(Field("ListBoxOutput", "Give Out As", typeof(uScript_ListBoxOutput).ToString(), OutputFor(box.Parameter.Type).ToString()));
          }
 
@@ -298,6 +309,9 @@ namespace Detox.ScriptEditor
                case "ListBoxSelectorIsVariable":
                   settings.SelectorIsVariable = field.Default == "true";
                   break;
+               case "ListBoxAddIfMissing":
+                  settings.AddIfMissing = field.Default == "true";
+                  break;
                case "ListBoxOutput":
                   if (IsStringList(box))
                   {
@@ -312,6 +326,7 @@ namespace Detox.ScriptEditor
          if (!IsStringList(box))
          {
             settings.FindBy = uScript_ListBoxFindBy.Position;
+            settings.AddIfMissing = false;
          }
 
          box.ComponentType = Write(settings);

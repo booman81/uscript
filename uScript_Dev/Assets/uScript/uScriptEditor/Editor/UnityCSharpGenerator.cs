@@ -5181,6 +5181,7 @@ namespace Detox.ScriptEditor
          //where the list comes from, and how a changed copy is written back
          string readList = "null";
          List<string> writeBack = new List<string>();
+         string assignBack = null;
 
          LinkNode[] links = FindLinksByDestination(listBox.Guid, listBox.Instance.Name);
          EntityNode source = links.Length > 0 ? m_Script.GetNode(links[0].Source.Guid) : null;
@@ -5194,6 +5195,7 @@ namespace Detox.ScriptEditor
             if (sourceType.Contains("[]"))
             {
                readList = CSharpName(source);
+               assignBack = CSharpName(source) + " = list;";
             }
             else
             {
@@ -5271,7 +5273,20 @@ namespace Detox.ScriptEditor
             }
 
             read = "uScript_ListBox." + read + "(list, " + selector + ")";
-            write = "uScript_ListBox.SetText(list, " + selector + ", " + valueName + ");";
+            if (byKey && settings.AddIfMissing)
+            {
+               //a new key makes the list longer, so the new list is stored back in the variable
+               write = "list = uScript_ListBox.SetTextOrAdd(list, " + selector + ", " + valueName + ");";
+
+               if (assignBack != null)
+               {
+                  writeBack.Insert(0, assignBack);
+               }
+            }
+            else
+            {
+               write = "uScript_ListBox.SetText(list, " + selector + ", " + valueName + ");";
+            }
          }
          else
          {
@@ -5292,7 +5307,10 @@ namespace Detox.ScriptEditor
          AddCSharpLine("{");
          ++m_TabStack;
          AddCSharpLine(listType + " list = " + readList + ";");
-         AddCSharpLine("if ( null == list ) return;");
+         if (false == (byKey && settings.AddIfMissing))
+         {
+            AddCSharpLine("if ( null == list ) return;");
+         }
          AddCSharpLine(write);
          foreach (string line in writeBack)
          {

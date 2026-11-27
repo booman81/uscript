@@ -129,6 +129,27 @@ public static class uScript_ListBox
       if (index >= 0) list[index] = Key(value);
    }
 
+   /// <summary>Writes the value after a key, as text. A missing key is added to the end with its value.
+   /// Returns the list to keep: the same list, or a longer one when the key was added.</summary>
+   public static string[] SetTextOrAdd(string[] list, string key, object value)
+   {
+      int index = ValueIndexOfKey(list, key);
+      if (index >= 0)
+      {
+         list[index] = Key(value);
+         return list;
+      }
+
+      if (string.IsNullOrEmpty(key) || key.Trim().Length == 0) return list;
+
+      int length = list == null ? 0 : list.Length;
+      string[] longer = new string[length + 2];
+      if (length > 0) Array.Copy(list, longer, length);
+      longer[length] = key.Trim();
+      longer[length + 1] = Key(value);
+      return longer;
+   }
+
    // ---------------------------------------------------------------- conversions (the same on every PC, whatever its number format)
 
    public static float ToFloat(string text)
