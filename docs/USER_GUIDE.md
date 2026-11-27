@@ -297,6 +297,7 @@ is simply not compiled.
 | `uscript_find` | Searches all graphs for a text: a signal name, an animation state, a node type, a comment. |
 | `uscript_signals` | Lists every signal name sent with Send Signal, which graphs send it, and which graphs mention that name (usually where it is received). Flags signals nobody mentions. |
 | `uscript_check_graph` | Looks for likely mistakes: broken links, nodes that never run, events connected to nothing, unused variables, empty signal names, out-of-date generated code. |
+| `uscript_selection` | Reads the nodes you selected in the open uScript window (unsaved changes included), follows their branch, and adds the variables they use. Select nodes, then ask the AI to "check logic". |
 
 **Node ids match the generated code.** Every node has an id, and it is the same number uScript uses in the graph's C# code.
 A Console error with `Zombie_Hero:Relay_In_865` in its stack trace comes from node 865 of Zombie_Hero, so you can ask the

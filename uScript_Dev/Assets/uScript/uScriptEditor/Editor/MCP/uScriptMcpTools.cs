@@ -765,4 +765,140 @@ namespace uScriptMcp
          return found;
       }
    }
+
+   // ------------------------------------------------------------------------------------------------
+
+   [McpForUnityTool("uscript_selection", Description =
+      "Reads the nodes the user has SELECTED in the open uScript editor window, so you can check their logic. Read-only. " +
+      "Use it when the user says things like \"check logic\", \"check this\" or \"what does this do\" about uScript. " +
+      "It reads the editor's live graph, including unsaved changes. " +
+      "By default it also follows the signal flow (the branch) forward from the selected nodes, and adds the variables and boxes they use. " +
+      "Node ids match the graph's generated C# code only after the graph is saved.")]
+   public static class UScriptSelectionTool
+   {
+      public class Parameters
+      {
+         [ToolParameter("Follow the signal flow forward from the selection, to include the whole branch (default: true).", Required = false)]
+         public bool? follow_branch { get; set; }
+
+         [ToolParameter("Also follow the signal flow backward, to show what leads into the selection (default: false).", Required = false)]
+         public bool? include_callers { get; set; }
+
+         [ToolParameter("Most nodes to return (default 200, max 500).", Required = false)]
+         public int? limit { get; set; }
+      }
+
+      public static object HandleCommand(JObject @params)
+      {
+         try
+         {
+            uScript editor = uScript.WeakInstance;
+            if (editor == null || editor.ScriptEditorCtrl == null || editor.ScriptEditorCtrl.ScriptEditor == null)
+            {
+               return new ErrorResponse("The uScript editor window is not open. Open it, open a graph and select some nodes.");
+            }
+
+            ScriptEditor script = editor.ScriptEditorCtrl.ScriptEditor;
+            string name = string.IsNullOrEmpty(script.Name) ? "(unsaved graph)" : System.IO.Path.GetFileNameWithoutExtension(script.Name);
+            var view = new GraphView(name, script);
+
+            bool followBranch = McpParams.Bool(@params, "follow_branch", true);
+            bool callers = McpParams.Bool(@params, "include_callers", false);
+            int limit = McpParams.Int(@params, "limit", 200, 1, 500);
+
+            var selected = new List<int>();
+            foreach (var displayNode in editor.ScriptEditorCtrl.SelectedNodes)
+            {
+               if (displayNode == null) continue;
+               int id = view.Id(displayNode.EntityNode.Guid);
+               if (id >= 0 && !(view.Entities[id] is LinkNode)) selected.Add(id);
+            }
+
+            if (selected.Count == 0)
+            {
+               return new ErrorResponse("Nothing is selected in graph " + view.Name + ". Select one node (for its whole branch) or several nodes, then ask again.");
+            }
+
+            // the branch: follow signal links (not variable links) from the selection
+            var included = new HashSet<int>(selected);
+            var order = new List<int>(selected);
+            var queue = new Queue<int>(selected);
+
+            while ((followBranch || callers) && queue.Count > 0 && included.Count < limit)
+            {
+               int id = queue.Dequeue();
+
+               if (followBranch)
+               {
+                  foreach (LinkNode link in view.Out(id))
+                  {
+                     int to = view.Id(link.Destination.Guid);
+                     if (IsSignal(view, id, to) && included.Add(to)) { order.Add(to); queue.Enqueue(to); }
+                  }
+               }
+
+               if (callers)
+               {
+                  foreach (LinkNode link in view.In(id))
+                  {
+                     int from = view.Id(link.Source.Guid);
+                     if (IsSignal(view, from, id) && included.Add(from)) { order.Add(from); queue.Enqueue(from); }
+                  }
+               }
+            }
+
+            // the variables, property boxes and List Boxes those nodes read or write
+            foreach (int id in order.ToList())
+            {
+               foreach (LinkNode link in view.In(id).Concat(view.Out(id)))
+               {
+                  int other = view.Id(link.Source.Guid) == id ? view.Id(link.Destination.Guid) : view.Id(link.Source.Guid);
+                  if (other >= 0 && IsData(view.Entities[other]) && included.Add(other)) order.Add(other);
+               }
+            }
+
+            List<int> returned = order.Take(limit).ToList();
+            List<object> nodes = returned.Select(id => UScriptReadGraphTool.Describe(view, id)).ToList();
+
+            var data = new
+            {
+               graph = new
+               {
+                  name = view.Name,
+                  unsaved_changes = editor.ScriptEditorCtrl.IsDirty,
+                  generated_code_out_of_date = script.GeneratedCodeIsStale
+               },
+               selected_ids = selected,
+               followed_branch = followBranch,
+               included_callers = callers,
+               total = order.Count,
+               returned = nodes.Count,
+               truncated = order.Count > nodes.Count,
+               hint = "Nodes are listed in flow order: the selection first, then the nodes its signals reach, then the variables and boxes they use. " +
+                      "\"in\" and \"out\" are the links; \"values\" shows where each input gets its value.",
+               nodes
+            };
+
+            string message = "Graph " + view.Name + ": " + selected.Count + " selected node(s), " + nodes.Count + " node(s) in the branch" +
+                             (order.Count > nodes.Count ? " (more than the limit; raise limit to see all)." : ".");
+
+            return new SuccessResponse(message, data);
+         }
+         catch (Exception e)
+         {
+            return new ErrorResponse("Could not read the selection: " + e.Message);
+         }
+      }
+
+      private static bool IsData(EntityNode entity)
+      {
+         return entity is LocalNode || entity is EntityProperty || entity is OwnerConnection;
+      }
+
+      private static bool IsSignal(GraphView view, int from, int to)
+      {
+         if (from < 0 || to < 0) return false;
+         return !IsData(view.Entities[from]) && !IsData(view.Entities[to]) && !(view.Entities[to] is CommentNode);
+      }
+   }
 }
