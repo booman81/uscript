@@ -26,7 +26,8 @@ namespace Detox.ScriptEditor
 
             if ( ListBox.Is(EntityProperty) )
             {
-               return ListBox.Title(EntityProperty) + "\n" + ListBox.Describe(EntityProperty);
+               bool linked = null != m_Ctrl && ListBox.SelectorLinked(m_Ctrl.ScriptEditor, EntityProperty);
+               return ListBox.Title(EntityProperty) + "\n" + ListBox.Describe(EntityProperty, linked);
             }
 
             name = EntityProperty.Instance.Default;
@@ -94,6 +95,21 @@ namespace Detox.ScriptEditor
                   socket.DefaultValue = entityProperty.Instance.Default;
                }
             }
+            sockets.Add( socket );
+         }
+
+         //List Box: a second bottom socket for the position or key
+         if ( ListBox.Is(entityProperty) )
+         {
+            Parameter selector = ListBox.SelectorParameter( entityProperty );
+
+            socket = new Socket( );
+            socket.Alignment = Socket.Align.Bottom;
+            socket.InternalName = selector.Name;
+            socket.FriendlyName = selector.FriendlyName;
+            socket.Type = selector.Type;
+            socket.Input  = true;
+            socket.Output = false;
             sockets.Add( socket );
          }
 

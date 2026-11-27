@@ -238,7 +238,9 @@ A List Box reads or writes one item of a list, with no node in between. It works
 
 **Connect it:** link your list variable into the **List** socket at the bottom of the box. Link the box into any node input to read the item, or link a node output into it to write the item back to the list.
 
-**Pick the item** in the properties panel:
+**Pick the item from a socket:** link any variable into the **Position** (or **Key**) socket, next to **List** at the bottom of the box. Its value picks the item, and it wins over what is typed in the panel.
+
+**Or pick the item** in the properties panel:
 
 | Setting | What it does |
 |---|---|

@@ -20,6 +20,38 @@ namespace Detox.ScriptEditor
 
       public const string ValueName = "Value";
 
+      /// <summary>The socket next to List that takes the position or key from a variable.</summary>
+      public const string SelectorName = "Selector";
+
+      /// <summary>The Position/Key socket. It accepts any variable: numbers, text, or others.</summary>
+      public static Parameter SelectorParameter(EntityProperty box)
+      {
+         var selector = new Parameter();
+         selector.Name = SelectorName;
+         selector.FriendlyName = Read(box).FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Position";
+         selector.Type = "System.Object";
+         selector.AutoLinkType = "System.Object";
+         selector.Default = string.Empty;
+         selector.ReferenceGuid = string.Empty;
+         selector.Input = true;
+         selector.Output = false;
+         selector.State = Parameter.VisibleState.Visible;
+         return selector;
+      }
+
+      /// <summary>True when a link is connected to the box's Position/Key socket.</summary>
+      public static bool SelectorLinked(ScriptEditor script, EntityProperty box)
+      {
+         if (script == null) return false;
+
+         foreach (LinkNode link in script.Links)
+         {
+            if (link.Destination.Guid == box.Guid && link.Destination.Anchor == SelectorName) return true;
+         }
+
+         return false;
+      }
+
       public struct Settings
       {
          public uScript_ListBoxFindBy FindBy;
@@ -122,11 +154,20 @@ namespace Detox.ScriptEditor
       /// <summary>Second line of the box, such as: Key "Health" · float, or: Position = Selected_Index.</summary>
       public static string Describe(EntityProperty box)
       {
+         return Describe(box, false);
+      }
+
+      public static string Describe(EntityProperty box, bool selectorLinked)
+      {
          Settings settings = Read(box);
          string selector = settings.Selector ?? string.Empty;
          string text;
 
-         if (settings.SelectorIsVariable)
+         if (selectorLinked)
+         {
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from socket" : "Position from socket";
+         }
+         else if (settings.SelectorIsVariable)
          {
             text = (settings.FindBy == uScript_ListBoxFindBy.Key ? "Key = " : "Position = ") + (selector.Length > 0 ? selector : "?");
          }
@@ -174,6 +215,8 @@ namespace Detox.ScriptEditor
          "\u2022 Find By Position: 1 = first item, 2 = second, -1 = last, -2 = second to last.\n" +
          "\u2022 Find By Key (text lists only): for a list like \"Health, 3, Damage, 6\", the key Health gives 3. " +
          "Keys ignore upper/lower case and spaces around them.\n" +
+         "\u2022 Position/Key socket: link a variable into the second socket at the bottom of the box (next to List). " +
+         "Its value picks the item, instead of what is typed in the Properties panel.\n" +
          "\u2022 Use Variable: turn it on and type the name of a graph variable (for example Selected_Index) " +
          "in the Position or Key field. The variable's current value picks the item every time the box is used.\n" +
          "\u2022 Give Out As (text lists only): Text, Whole Number, Decimal or True/False. " +
@@ -199,6 +242,9 @@ namespace Detox.ScriptEditor
                return "The chosen list item. Link it into a node input to read it; link a node output into it to write the item back to the list.";
             case "Instance":
                return "The list to read from and write to. Link a list variable here (one link only).";
+            case SelectorName:
+               return "Optional. Link a variable here to choose the item: a number for Position, or text for Key. " +
+                      "When linked, it is used instead of the Position or Key typed in the Properties panel.";
             default:
                return parameterName;
          }

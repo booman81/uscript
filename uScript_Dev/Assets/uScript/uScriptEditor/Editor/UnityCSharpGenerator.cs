@@ -5214,10 +5214,27 @@ namespace Detox.ScriptEditor
             }
          }
 
-         //which item: a fixed position or key, or the value of a named variable
+         //which item: a variable linked to the Position/Key socket, a named variable, or a fixed position or key
          string selector;
 
-         if (settings.SelectorIsVariable)
+         LinkNode[] selectorLinks = FindLinksByDestination(listBox.Guid, ListBox.SelectorName);
+         EntityNode selectorSource = selectorLinks.Length > 0 ? m_Script.GetNode(selectorLinks[0].Source.Guid) : null;
+         string selectorValue = null;
+
+         if (selectorSource is LocalNode || selectorSource is ExternalConnection)
+         {
+            selectorValue = CSharpName(selectorSource);
+         }
+         else if (selectorSource is EntityProperty && ((EntityProperty)selectorSource).Parameter.Output)
+         {
+            selectorValue = CSharpRefreshGetPropertyDeclaration((EntityProperty)selectorSource) + "( )";
+         }
+
+         if (selectorValue != null)
+         {
+            selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Position(") + selectorValue + ")";
+         }
+         else if (settings.SelectorIsVariable)
          {
             LocalNode variable = Array.Find(m_Script.UniqueLocals, l => l.Name.Default == settings.Selector);
 

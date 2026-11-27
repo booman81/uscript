@@ -361,6 +361,11 @@ namespace Detox.Editor
          {
             this.DrawFormattedParameter(node.Instance, Detox.ScriptEditor.ListBox.Is(node) ? nodeType : string.Empty);
          }
+
+         if (Detox.ScriptEditor.ListBox.Is(node))
+         {
+            this.DrawFormattedParameter(Detox.ScriptEditor.ListBox.SelectorParameter((EntityProperty)node), nodeType);
+         }
       }
 
       private void DrawToolbar()
