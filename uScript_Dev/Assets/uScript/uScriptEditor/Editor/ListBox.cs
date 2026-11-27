@@ -221,8 +221,8 @@ namespace Detox.ScriptEditor
 
          parameters.AddRange(new[]
          {
-            Field("ListBoxSelector", settings.FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Position (1 = first, -1 = last)", "System.String", settings.Selector ?? string.Empty),
-            Field("ListBoxSelectorIsVariable", "Use Variable (type its name)", "System.Boolean", settings.SelectorIsVariable ? "true" : "false"),
+            Field("ListBoxSelector", settings.FindBy == uScript_ListBoxFindBy.Key ? "Key" : "Position", "System.String", settings.Selector ?? string.Empty),
+            Field("ListBoxSelectorIsVariable", "Use Variable", "System.Boolean", settings.SelectorIsVariable ? "true" : "false"),
          });
 
          if (IsStringList(box))
