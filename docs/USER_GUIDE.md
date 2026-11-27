@@ -230,6 +230,29 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 
 ---
 
+## List Boxes
+
+A List Box reads or writes one item of a list, with no node in between. It works like a property box.
+
+**Add one:** right-click the canvas → **Add → Variables → List Box →** pick the list type (String, Int, Float, Bool, GameObject, Vector3 or Object).
+
+**Connect it:** link your list variable into the **List** socket at the bottom of the box. Link the box into any node input to read the item, or link a node output into it to write the item back to the list.
+
+**Pick the item** in the properties panel:
+
+| Setting | What it does |
+|---|---|
+| Find By | **Position** or **Key** (Key is for text lists only). |
+| Position / Key | Position: 1 = first item, -1 = last. Key: for lists like `Health,3,Damage,6`, the key `Health` gives `3`. |
+| Use Variable | On: type the **name** of a graph variable (for example `Selected_Index`) and its value picks the item each time. |
+| Give Out As | Text lists only: Text, Whole Number, Decimal or True/False. |
+
+Good to know:
+- The box always shows the current item. Writing to it changes the list itself.
+- A position outside the list, or a key that is missing, reads as empty or 0 and writes nothing. To add new keys, use a list node.
+- Numbers are read and written the same way on every PC: `12.5` works, and so does `12,5`.
+- Graphs without List Boxes generate the same code as before.
+
 ## Themes: Classic, Studio and Modern
 
 uScript has three canvas looks. Switch with **View > Theme** or in the Preferences under **Canvas Look**. The change is

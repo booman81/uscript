@@ -231,6 +231,7 @@ namespace uScriptMcp
          if (entity is LogicNode) return "node";
          if (entity is EntityEvent) return "event";
          if (entity is EntityMethod) return "method";
+         if (Detox.ScriptEditor.ListBox.Is(entity)) return "list_box";
          if (entity is EntityProperty) return "property";
          if (entity is LocalNode) return "variable";
          if (entity is ExternalConnection) return "external";
@@ -245,6 +246,7 @@ namespace uScriptMcp
          if (entity is LogicNode) return ((LogicNode)entity).FriendlyName;
          if (entity is EntityEvent) return ((EntityEvent)entity).FriendlyType;
          if (entity is EntityMethod) return ((EntityMethod)entity).Input.FriendlyName;
+         if (Detox.ScriptEditor.ListBox.Is(entity)) return Detox.ScriptEditor.ListBox.Title((EntityProperty)entity) + " " + Detox.ScriptEditor.ListBox.Describe((EntityProperty)entity);
          if (entity is EntityProperty) return ((EntityProperty)entity).Parameter.FriendlyName;
          if (entity is LocalNode)
          {
@@ -262,6 +264,7 @@ namespace uScriptMcp
          if (entity is LogicNode) return ((LogicNode)entity).Type;
          if (entity is EntityEvent) return ((EntityEvent)entity).ComponentType;
          if (entity is EntityMethod) return ((EntityMethod)entity).ComponentType;
+         if (Detox.ScriptEditor.ListBox.Is(entity)) return "List Box";
          if (entity is EntityProperty) return ((EntityProperty)entity).ComponentType;
          if (entity is LocalNode) return ((LocalNode)entity).Value.Type;
          return "";

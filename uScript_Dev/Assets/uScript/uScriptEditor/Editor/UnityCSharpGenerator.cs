@@ -399,6 +399,9 @@ namespace Detox.ScriptEditor
                false == entityNode is EntityMethod) continue;
 
 
+            //a List Box is kept whenever a list is linked to it
+            if (ListBox.Is(entityNode) && FindLinksByDestination(entityNode.Guid, entityNode.Instance.Name).Length > 0) continue;
+
             //an instance set in the property grid?
             if (entityNode.Instance.Default != "") continue;
 
@@ -1200,6 +1203,12 @@ namespace Detox.ScriptEditor
 
          foreach (EntityProperty entityProperty in m_Script.Properties)
          {
+            if (ListBox.Is(entityProperty))
+            {
+               SetupListBox(entityProperty);
+               continue;
+            }
+
             bool isArray = entityProperty.Parameter.Type.Contains("[]");
 
             if (false == entityProperty.IsStatic)
@@ -5156,6 +5165,125 @@ namespace Detox.ScriptEditor
          string operation = addEvent ? "+=" : "-=";
 
          AddCSharpLine(CSharpName(logicNode, logicNode.Type) + "." + eventName + " " + operation + " " + CSharpEventDeclaration(logicNode, eventName) + ";");
+      }
+
+      //List Box: get and set functions that read or write one item of the linked list
+      private void SetupListBox(EntityProperty listBox)
+      {
+         ListBox.Settings settings = ListBox.Read(listBox);
+         bool strings = ListBox.IsStringList(listBox);
+         bool byKey = strings && settings.FindBy == uScript_ListBoxFindBy.Key;
+
+         string listType = FormatType(listBox.Instance.Type);
+         string elementType = FormatType(listBox.Instance.Type.Replace("[]", ""));
+         string valueName = CSharpName(listBox, listBox.Parameter.Name);
+
+         //where the list comes from, and how a changed copy is written back
+         string readList = "null";
+         List<string> writeBack = new List<string>();
+
+         LinkNode[] links = FindLinksByDestination(listBox.Guid, listBox.Instance.Name);
+         EntityNode source = links.Length > 0 ? m_Script.GetNode(links[0].Source.Guid) : null;
+
+         if (source is LocalNode || source is ExternalConnection)
+         {
+            string sourceType = source is LocalNode
+                                ? ((LocalNode)source).Value.Type
+                                : GetLowestCommonExternalParameter((ExternalConnection)source).Type;
+
+            if (sourceType.Contains("[]"))
+            {
+               readList = CSharpName(source);
+            }
+            else
+            {
+               //a single value linked to the list socket is a list of one
+               readList = "new " + elementType + "[] { " + CSharpName(source) + " }";
+            }
+         }
+         else if (source is EntityProperty && ((EntityProperty)source).Parameter.Output)
+         {
+            EntityProperty sourceProperty = (EntityProperty)source;
+            readList = CSharpRefreshGetPropertyDeclaration(sourceProperty) + "( )";
+
+            if (sourceProperty.Parameter.Input)
+            {
+               //property boxes give out a copy of their list, so the changed copy is set back on them
+               writeBack.Add(CSharpName(sourceProperty, sourceProperty.Parameter.Name) + " = list;");
+               writeBack.Add(CSharpRefreshSetPropertyDeclaration(sourceProperty) + "( );");
+            }
+         }
+
+         //which item: a fixed position or key, or the value of a named variable
+         string selector;
+
+         if (settings.SelectorIsVariable)
+         {
+            LocalNode variable = Array.Find(m_Script.UniqueLocals, l => l.Name.Default == settings.Selector);
+
+            if (variable.Guid == Guid.Empty)
+            {
+               uScriptDebug.Log("List Box: no variable named \"" + settings.Selector + "\" in graph " + m_Script.Name + ", so the List Box finds nothing.", uScriptDebug.Type.Warning);
+               selector = byKey ? "\"\"" : "0";
+            }
+            else
+            {
+               selector = (byKey ? "uScript_ListBox.Key(" : "uScript_ListBox.Position(") + CSharpName(variable) + ")";
+            }
+         }
+         else if (byKey)
+         {
+            selector = FormatValue(settings.Selector ?? "", "System.String");
+         }
+         else
+         {
+            selector = uScript_ListBox.Position(settings.Selector).ToString(System.Globalization.CultureInfo.InvariantCulture);
+         }
+
+         string read;
+         string write;
+
+         if (strings)
+         {
+            switch (ListBox.OutputFor(listBox.Parameter.Type))
+            {
+               case uScript_ListBoxOutput.WholeNumber: read = "GetInt"; break;
+               case uScript_ListBoxOutput.Decimal:     read = "GetFloat"; break;
+               case uScript_ListBoxOutput.TrueFalse:   read = "GetBool"; break;
+               default:                                read = "GetString"; break;
+            }
+
+            read = "uScript_ListBox." + read + "(list, " + selector + ")";
+            write = "uScript_ListBox.SetText(list, " + selector + ", " + valueName + ");";
+         }
+         else
+         {
+            read = "uScript_ListBox.Get(list, " + selector + ")";
+            write = "uScript_ListBox.Set(list, " + selector + ", " + valueName + ");";
+         }
+
+         AddCSharpLine(FormatType(listBox.Parameter.Type) + " " + CSharpRefreshGetPropertyDeclaration(listBox) + "( )");
+         AddCSharpLine("{");
+         ++m_TabStack;
+         AddCSharpLine(listType + " list = " + readList + ";");
+         AddCSharpLine("return " + read + ";");
+         --m_TabStack;
+         AddCSharpLine("}");
+         AddCSharpLine("");
+
+         AddCSharpLine("void " + CSharpRefreshSetPropertyDeclaration(listBox) + "( )");
+         AddCSharpLine("{");
+         ++m_TabStack;
+         AddCSharpLine(listType + " list = " + readList + ";");
+         AddCSharpLine("if ( null == list ) return;");
+         AddCSharpLine(write);
+         foreach (string line in writeBack)
+         {
+            AddCSharpLine(line);
+         }
+         --m_TabStack;
+         AddCSharpLine("}");
+         AddCSharpLine("");
       }
 
       //unique function name per entity property to get

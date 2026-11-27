@@ -24,6 +24,11 @@ namespace Detox.ScriptEditor
          {
             string name = "";
 
+            if ( ListBox.Is(EntityProperty) )
+            {
+               return ListBox.Title(EntityProperty) + "\n" + ListBox.Describe(EntityProperty);
+            }
+
             name = EntityProperty.Instance.Default;
             if ( "" == name )
             {

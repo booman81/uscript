@@ -1414,7 +1414,11 @@ namespace Detox.ScriptEditor
       
                if ( null != contextObject && typeof(UnityEngine.Object).IsAssignableFrom(contextObject.GetType()) )
                {
-                  if ( entityNode.Instance != Parameter.Empty && entityNode.Instance.Input == true )
+                  if ( ListBox.Is(entityNode) )
+                  {
+                     //a List Box gets its list from a link, not from the selected object
+                  }
+                  else if ( entityNode.Instance != Parameter.Empty && entityNode.Instance.Input == true )
                   {
                      Parameter instance = entityNode.Instance;
                      instance.Default = ((UnityEngine.Object)contextObject).name;
@@ -2317,9 +2321,17 @@ namespace Detox.ScriptEditor
                EntityNode oldNode = entityNode.Copy( true );
 
                entityNode.Parameters  = p.GetParameters( "Parameters" );
-               entityNode.ShowComment = p.GetParameters( "Comment" ) [ 0 ];
-               entityNode.Comment     = p.GetParameters( "Comment" ) [ 1 ];
-               entityNode.Instance    = p.GetParameters( "Instance" )[ 0 ];
+
+               if ( ListBox.Is(entityNode) )
+               {
+                  entityNode = ListBox.ApplyPanel( (EntityProperty) entityNode, p.GetParameters( ListBox.PanelKey ) );
+               }
+               else
+               {
+                  entityNode.ShowComment = p.GetParameters( "Comment" ) [ 0 ];
+                  entityNode.Comment     = p.GetParameters( "Comment" ) [ 1 ];
+                  entityNode.Instance    = p.GetParameters( "Instance" )[ 0 ];
+               }
 
                if (entityNode is LogicNode)
                {
@@ -3215,6 +3227,15 @@ namespace Detox.ScriptEditor
 
             friendlyMenu.Tag = new OwnerConnection( Guid.NewGuid( ) );
             friendlyMenu.Click += new System.EventHandler(m_MenuAddNode_Click);
+
+            // List Boxes: read or write one item of a list, by position or by key
+            foreach ( KeyValuePair<string, string> listType in ListBox.ListTypes )
+            {
+               ToolStripMenuItem listBoxMenu = GetMenu(addMenu, categoryName + "/List Box/" + listType.Key );
+
+               listBoxMenu.Tag = ListBox.Create( listType.Value );
+               listBoxMenu.Click += new System.EventHandler(m_MenuAddNode_Click);
+            }
          }
 
          ReformatMenu( addMenu );
@@ -3551,7 +3572,16 @@ namespace Detox.ScriptEditor
       {
          string name = Name;
 
-         if (this is EntityPropertyDisplayNode)
+         if (ListBox.Is(EntityNode))
+         {
+            EntityProperty listBox = (EntityProperty) EntityNode;
+
+            PropertyGridParameters listBoxParameters = new PropertyGridParameters("List Box " + ListBox.Title(listBox), EntityNode, m_Ctrl);
+            listBoxParameters.AddParameters(ListBox.PanelKey, ListBox.PanelParameters(listBox));
+            listBoxParameters.AddParameters("Parameters", EntityNode.Parameters);
+            return listBoxParameters;
+         }
+         else if (this is EntityPropertyDisplayNode)
          {
             name = "Instance Property";
          }

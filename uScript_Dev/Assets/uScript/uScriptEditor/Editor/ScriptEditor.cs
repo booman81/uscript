@@ -5510,7 +5510,13 @@ namespace Detox.ScriptEditor
       private EntityProperty CreateEntityProperty( EntityPropertyData data )
       {
          EntityProperty cloned;
-         
+
+         // List Boxes are built into uScript, not read from a component, so they are never out of date
+         if ( ListBox.Is(data.ComponentType) )
+         {
+            return new EntityProperty( data );
+         }
+
          if ( null == m_EntityDescs )
          {
             cloned = new EntityProperty( data );
