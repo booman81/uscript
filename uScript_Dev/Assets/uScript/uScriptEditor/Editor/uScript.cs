@@ -3389,6 +3389,7 @@ public sealed partial class uScript : EditorWindow
       menu.AddDisabledItem(uScriptGUIContent.ViewMenuItemSnapSelected);
       menu.AddSeparator(string.Empty);
 
+      menu.AddItem(new GUIContent("Go to Node #...  (N)"), false, uScriptGoToNodeWindow.Open);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindCanvasOrigin, false, CommandCanvasLocateOrigin);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindNextEvent, false, this.CommandCanvasLocateNextEvent);
       menu.AddItem(uScriptGUIContent.ViewMenuItemFindPreviousEvent, false, this.CommandCanvasLocatePreviousEvent);

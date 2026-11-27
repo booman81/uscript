@@ -230,6 +230,12 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 
 ---
 
+## Go to Node #
+
+**View → Go to Node #...** (or press **N** on the canvas) jumps to a node by its number and selects it.
+Use the number from a Console error (for example `Relay_In_423` means node 423) or from the AI tools.
+Numbers match the generated code after the graph is saved.
+
 ## List Boxes
 
 A List Box reads or writes one item of a list, with no node in between. It works like a property box.
