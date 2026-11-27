@@ -3812,7 +3812,7 @@ namespace Detox.ScriptEditor
                if ( null != socket.DefaultValue )
                {
                   int charsForLabel = (int)(((xStep + textLength.Width) * 1.75f) / charLength);
-                  charsForLabel = Math.Max( 3, charsForLabel );
+                  charsForLabel = Math.Max( 12, charsForLabel );
 
                   if (socket.Type.Contains("Mask"))
                   {
