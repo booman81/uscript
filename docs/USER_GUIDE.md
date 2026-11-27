@@ -248,6 +248,7 @@ A List Box reads or writes one item of a list, with no node in between. It works
 | Position / Key | Position: 1 = first item, -1 = last. Key: for lists like `Health,3,Damage,6`, the key `Health` gives `3`. |
 | Use Variable | On: type the **name** of a graph variable (for example `Selected_Index`) and its value picks the item each time. |
 | Add Key If Missing | Key mode: writing to a key that isn't in the list adds it to the end, e.g. writing 50 to `Mana` adds `Mana,50`. |
+| Default Value | What the box gives when the key or position is missing (e.g. `100`). Empty = 0, empty text or False. Reading only. |
 | Give Out As | Text lists only: Text, Whole Number, Decimal or True/False. |
 
 Good to know:

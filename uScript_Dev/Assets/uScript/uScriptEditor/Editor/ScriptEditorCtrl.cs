@@ -2326,14 +2326,13 @@ namespace Detox.ScriptEditor
                EntityNode entityNode  = p.EntityNode;
                EntityNode oldNode = entityNode.Copy( true );
 
-               entityNode.Parameters  = p.GetParameters( "Parameters" );
-
                if ( ListBox.Is(entityNode) )
                {
                   entityNode = ListBox.ApplyPanel( (EntityProperty) entityNode, p.GetParameters( ListBox.PanelKey ) );
                }
                else
                {
+                  entityNode.Parameters  = p.GetParameters( "Parameters" );
                   entityNode.ShowComment = p.GetParameters( "Comment" ) [ 0 ];
                   entityNode.Comment     = p.GetParameters( "Comment" ) [ 1 ];
                   entityNode.Instance    = p.GetParameters( "Instance" )[ 0 ];
@@ -3584,7 +3583,6 @@ namespace Detox.ScriptEditor
 
             PropertyGridParameters listBoxParameters = new PropertyGridParameters("List Box " + ListBox.Title(listBox), EntityNode, m_Ctrl);
             listBoxParameters.AddParameters(ListBox.PanelKey, ListBox.PanelParameters(listBox));
-            listBoxParameters.AddParameters("Parameters", EntityNode.Parameters);
             return listBoxParameters;
          }
          else if (this is EntityPropertyDisplayNode)

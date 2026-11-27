@@ -5262,6 +5262,10 @@ namespace Detox.ScriptEditor
          string read;
          string write;
 
+         //the Default Value, given when the item is missing
+         string missingCode = ListBox.DefaultCode(listBox);
+         string missing = missingCode != null ? ", " + missingCode : "";
+
          if (strings)
          {
             switch (ListBox.OutputFor(listBox.Parameter.Type))
@@ -5272,7 +5276,7 @@ namespace Detox.ScriptEditor
                default:                                read = "GetString"; break;
             }
 
-            read = "uScript_ListBox." + read + "(list, " + selector + ")";
+            read = "uScript_ListBox." + read + "(list, " + selector + missing + ")";
             if (byKey && settings.AddIfMissing)
             {
                //a new key makes the list longer, so the new list is stored back in the variable
@@ -5290,7 +5294,7 @@ namespace Detox.ScriptEditor
          }
          else
          {
-            read = "uScript_ListBox.Get(list, " + selector + ")";
+            read = "uScript_ListBox.Get(list, " + selector + missing + ")";
             write = "uScript_ListBox.Set(list, " + selector + ", " + valueName + ");";
          }
 

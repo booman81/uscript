@@ -63,6 +63,9 @@ namespace Detox.ScriptEditor
 
          /// <summary>Key mode: writing to a missing key adds the key and its value to the end of the list.</summary>
          public bool AddIfMissing;
+
+         /// <summary>What the box gives when the item is missing. Empty = 0, empty text or False.</summary>
+         public string Default;
       }
 
       /// <summary>The list types offered in the Add menu, with their menu names.</summary>
@@ -151,12 +154,17 @@ namespace Detox.ScriptEditor
             settings.AddIfMissing = parts[4] == "1";
          }
 
+         if (parts.Length > 5)
+         {
+            settings.Default = Unescape(parts[5]);
+         }
+
          return settings;
       }
 
       public static string Write(Settings settings)
       {
-         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0");
+         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0") + "|" + Escape(settings.Default ?? string.Empty);
       }
 
       /// <summary>Second line of the box, such as: Key "Health" · float, or: Position = Selected_Index.</summary>
@@ -238,6 +246,8 @@ namespace Detox.ScriptEditor
          "\u2022 The value is read fresh each time a node uses it, so it always matches the list.\n" +
          "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
          "Add new items with a list node.\n" +
+         "\u2022 Default Value: what the box gives when the key or position is missing (for example 100). " +
+         "Empty means 0, empty text or False. It is only for reading; it never changes the list.\n" +
          "\u2022 Add Key If Missing (Key mode): writing to a key that is not in the list adds the key and its value to the end, " +
          "for example writing 50 to Mana adds \"Mana, 50\".\n" +
          "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
@@ -287,6 +297,11 @@ namespace Detox.ScriptEditor
             parameters.Add(Field("ListBoxOutput", "Give Out As", typeof(uScript_ListBoxOutput).ToString(), OutputFor(box.Parameter.Type).ToString()));
          }
 
+         if (HasDefault(box))
+         {
+            parameters.Add(Field("ListBoxDefault", "Default Value", "System.String", settings.Default ?? string.Empty));
+         }
+
          return parameters.ToArray();
       }
 
@@ -308,6 +323,9 @@ namespace Detox.ScriptEditor
                   break;
                case "ListBoxSelectorIsVariable":
                   settings.SelectorIsVariable = field.Default == "true";
+                  break;
+               case "ListBoxDefault":
+                  settings.Default = (field.Default ?? string.Empty).Trim();
                   break;
                case "ListBoxAddIfMissing":
                   settings.AddIfMissing = field.Default == "true";
@@ -341,6 +359,40 @@ namespace Detox.ScriptEditor
          }
 
          return box;
+      }
+
+      /// <summary>Text, number and true/false lists can have a default value for missing items.</summary>
+      public static bool HasDefault(EntityProperty box)
+      {
+         switch (box.Parameter.Type)
+         {
+            case "System.String":
+            case "System.Int32":
+            case "System.Single":
+            case "System.Boolean":
+               return true;
+            default:
+               return false;
+         }
+      }
+
+      /// <summary>The default value as C# code of the box's value type, or null when none is set.</summary>
+      public static string DefaultCode(EntityProperty box)
+      {
+         string text = Read(box).Default;
+         if (string.IsNullOrEmpty(text) || !HasDefault(box)) return null;
+
+         switch (box.Parameter.Type)
+         {
+            case "System.Int32":
+               return uScript_ListBox.ToInt(text).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            case "System.Single":
+               return uScript_ListBox.ToFloat(text).ToString("R", System.Globalization.CultureInfo.InvariantCulture) + "f";
+            case "System.Boolean":
+               return uScript_ListBox.ToBool(text) ? "true" : "false";
+            default:
+               return "\"" + text.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+         }
       }
 
       public static uScript_ListBoxOutput OutputFor(string valueType)

@@ -104,6 +104,43 @@ public static class uScript_ListBox
 
    public static bool GetBool(string[] list, string key) { return ToBool(GetString(list, key)); }
 
+   // ---------------------------------------------------------------- reading with a default for missing items
+
+   public static T Get<T>(T[] list, int position, T missing)
+   {
+      int index = list == null ? -1 : IndexOf(list.Length, position);
+      return index >= 0 ? list[index] : missing;
+   }
+
+   public static string GetString(string[] list, int position, string missing)
+   {
+      int index = list == null ? -1 : IndexOf(list.Length, position);
+      return index >= 0 ? (list[index] ?? string.Empty) : missing;
+   }
+
+   public static string GetString(string[] list, string key, string missing)
+   {
+      int index = ValueIndexOfKey(list, key);
+      return index >= 0 ? (list[index] ?? string.Empty) : missing;
+   }
+
+   public static int GetInt(string[] list, int position, int missing) { return Found(list, position) ? GetInt(list, position) : missing; }
+
+   public static int GetInt(string[] list, string key, int missing) { return ValueIndexOfKey(list, key) >= 0 ? GetInt(list, key) : missing; }
+
+   public static float GetFloat(string[] list, int position, float missing) { return Found(list, position) ? GetFloat(list, position) : missing; }
+
+   public static float GetFloat(string[] list, string key, float missing) { return ValueIndexOfKey(list, key) >= 0 ? GetFloat(list, key) : missing; }
+
+   public static bool GetBool(string[] list, int position, bool missing) { return Found(list, position) ? GetBool(list, position) : missing; }
+
+   public static bool GetBool(string[] list, string key, bool missing) { return ValueIndexOfKey(list, key) >= 0 ? GetBool(list, key) : missing; }
+
+   private static bool Found(string[] list, int position)
+   {
+      return list != null && IndexOf(list.Length, position) >= 0;
+   }
+
    // ---------------------------------------------------------------- writing
 
    /// <summary>Writes an item of any list by position. Positions outside the list are ignored.</summary>
