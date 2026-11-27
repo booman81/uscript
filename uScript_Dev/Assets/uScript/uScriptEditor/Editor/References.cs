@@ -1075,8 +1075,8 @@ namespace Detox.Drawing
             {
                float titleX = rectangle.Left + (rectangle.Width * 0.5f) - (nameSize.x * 0.5f);
 
-               // Modern theme: a small icon left of the title, only when it fits, so node sizes never change
-               if (uScriptConfig.IsModern && Detox.Editor.Preferences.ShowNodeIcons && styleName.StartsWith("node") && node is Detox.ScriptEditor.DisplayNode)
+               // Modern and Studio themes: a small icon left of the title, only when it fits, so node sizes never change
+               if (uScriptConfig.ThemeHasNodeIcons && Detox.Editor.Preferences.ShowNodeIcons && styleName.StartsWith("node") && node is Detox.ScriptEditor.DisplayNode)
                {
                   const float IconSize = 12f;
                   const float IconGap = 4f;

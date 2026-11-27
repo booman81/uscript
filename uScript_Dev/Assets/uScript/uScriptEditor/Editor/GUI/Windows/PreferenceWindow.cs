@@ -127,9 +127,9 @@ namespace Detox.Editor.GUI.Windows
          GUILayout.Label("Canvas Look", EditorStyles.boldLabel);
 
          var theme = EditorGUILayout.Popup(
-            new GUIContent("Theme", "Classic is the original uScript look. Modern is darker, with rounded nodes and round sockets. Graphs are not changed."),
+            new GUIContent("Theme", "Classic is the original uScript look. Studio is Classic refreshed, with rounded nodes and soft shadows. Modern is dark, with round sockets. Graphs are not changed."),
             Preferences.Theme,
-            new[] { new GUIContent("Classic"), new GUIContent("Modern") });
+            new[] { new GUIContent("Classic"), new GUIContent("Modern"), new GUIContent("Studio") });
          if (theme != Preferences.Theme)
          {
             Preferences.Theme = theme;
@@ -137,7 +137,7 @@ namespace Detox.Editor.GUI.Windows
          }
 
          Preferences.ShowNodeIcons = EditorGUILayout.Toggle(
-            new GUIContent("Node Icons", "Modern theme: small icons in node title bars, when there is room."),
+            new GUIContent("Node Icons", "Modern and Studio themes: small icons in node title bars, when there is room."),
             Preferences.ShowNodeIcons);
 
          EditorGUILayout.Separator();

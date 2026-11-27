@@ -13,7 +13,7 @@ For the basics of visual scripting in uScript (nodes, links, variables, events, 
 - [Variables tab](#variables-tab)
 - [Finding errors](#finding-errors)
 - [Faster saves](#faster-saves)
-- [Modern theme](#modern-theme)
+- [Themes: Classic, Studio and Modern](#themes-classic-studio-and-modern)
 - [AI assistant tools (MCP)](#ai-assistant-tools-mcp)
 - [New nodes](#new-nodes)
 - [Shortcuts](#shortcuts)
@@ -230,17 +230,20 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 
 ---
 
-## Modern theme
+## Themes: Classic, Studio and Modern
 
-uScript has two canvas looks. Switch with **View > Theme** or in the Preferences under **Canvas Look**. The change is
-immediate, and graphs are not touched: every node keeps exactly the same size and position in both themes.
+uScript has three canvas looks. Switch with **View > Theme** or in the Preferences under **Canvas Look**. The change is
+immediate, and graphs are not touched: every node keeps exactly the same size and position in every theme.
 
 - **Classic**: the original uScript look.
+- **Studio**: Classic refreshed. The same blue-grey canvas, light title bars, orange events, cream selection and socket
+  shapes (square for In/Out, circle for value inputs, triangle for value outputs), with rounded corners, soft shadows,
+  crisper sockets, flatter variables and a red title bar on deprecated nodes.
 - **Modern**: a dark canvas, rounded nodes with a title bar, round sockets colored by type (blue for In/Out, orange
   for event outputs, purple GameObject, red bool, green string, cyan int, blue float), lighter links and round
   variables that stretch into a pill when selected. Event nodes have an orange title bar.
 
-**Node icons** (Modern theme, can be turned off in the Preferences): events get a lightning bolt, nodes about a Unity
+**Node icons** (Studio and Modern themes, can be turned off in the Preferences): events get a lightning bolt, nodes about a Unity
 object get Unity's own icon for it (Animator, Camera, Rigidbody, Transform, GameObject...), and other nodes get a
 small icon chosen from their name (compare, set, math, list, string, signal, timer, loop, input, debug). An icon is only
 drawn when it fits next to the title, so it never makes a node wider.

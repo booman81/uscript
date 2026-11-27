@@ -1,5 +1,5 @@
 """
-Generates the textures of uScript's "Modern" canvas theme.
+Generates the textures of uScript's "Modern" and "Studio" canvas themes.
 
 Every texture has the same file name, pixel size and 9-slice layout as its Classic twin in
 _GUI/uScriptDefault, so graphs keep exactly the same node sizes and positions in both themes.
@@ -76,8 +76,8 @@ def shadow(w, h, shape_box, radius, offset=(1.5, 2.0), blur=2.2, alpha=150, elli
     return layer.filter(ImageFilter.GaussianBlur(blur * SS))
 
 
-def save(img, relative):
-    path = os.path.join(MODERN, relative)
+def save(img, relative, root=None):
+    path = os.path.join(root or MODERN, relative)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     img.save(path)
     write_meta(path)
@@ -444,3 +444,209 @@ def write_icons():
 
 if __name__ == "__main__":
     write_icons()
+
+
+# ==================================================================================================
+# "Studio" theme: Classic's identity (blue-grey canvas, light title bars, square flow sockets,
+# circle inputs, triangle outputs, cream selection), cleaned up with rounded corners and soft shadows.
+# ==================================================================================================
+STUDIO = os.path.join(ROOT, "uScriptStudio")
+
+ST_CANVAS = (82, 90, 106)
+ST_CREAM = (250, 238, 180)
+ST_RING = (30, 33, 42)
+ST_FLOW = (226, 230, 238)
+ST_EVENT_FLOW = (255, 196, 96)
+ST_TYPES = {
+    "default": (200, 206, 218),
+    "string": (96, 214, 120),
+    "bool": (238, 74, 84),
+    "float": (80, 130, 255),
+    "int": (70, 200, 236),
+    "vector3": (240, 200, 100),
+    "gameobject": (186, 104, 255),
+    "object": (245, 160, 240),
+}
+ST_NODES = {
+    #               header            body            border
+    "default":    ((200, 206, 218), (44, 48, 60),   (30, 33, 42)),
+    "event":      ((250, 178, 64),  (70, 52, 30),   (214, 140, 40)),
+    "selected":   ((200, 206, 218), (44, 48, 60),   ST_CREAM),
+    "deprecated": ((236, 120, 120), (60, 38, 42),   (170, 60, 60)),
+}
+ST_VARIABLE_FILL = (36, 36, 40)
+
+
+def st_node(kind):
+    header, body, border = ST_NODES[kind]
+    w, h = 25, 39
+    shape = (1, 1, 19, 32)
+    header_bottom = 18
+    r = 5
+    img = canvas(w, h)
+    img.alpha_composite(shadow(w, h, shape, r, offset=(1.5, 2.2), blur=2.4, alpha=130))
+    d = ImageDraw.Draw(img)
+    width = 2 if kind == "selected" else 1.2
+    d.rounded_rectangle(box(*shape), radius=r * SS, fill=border + (255,))
+    inner = (shape[0] + width, shape[1] + width, shape[2] - width, shape[3] - width)
+    d.rounded_rectangle(box(*inner), radius=(r - width * 0.6) * SS, fill=body + (255,))
+    top = canvas(w, h)
+    ImageDraw.Draw(top).rounded_rectangle(box(*inner), radius=(r - width * 0.6) * SS, fill=header + (255,))
+    mask = canvas(w, h)
+    ImageDraw.Draw(mask).rectangle(box(0, 0, w, header_bottom), fill=(255, 255, 255, 255))
+    top.putalpha(Image.composite(top.getchannel("A"), Image.new("L", top.size, 0), mask.getchannel("A")))
+    img.alpha_composite(top)
+    # thin darker line under the title bar
+    d.rectangle(box(inner[0], header_bottom, inner[2], header_bottom + 0.8), fill=tuple(int(c * 0.72) for c in header) + (255,))
+    return finish(img, w, h)
+
+
+def st_mini(kind):
+    header, body, border = ST_NODES[kind]
+    img = Image.new("RGBA", (7, 9), border + (255,))
+    ImageDraw.Draw(img).rectangle([1, 1, 5, 7], fill=body + (255,))
+    ImageDraw.Draw(img).rectangle([1, 1, 5, 3], fill=header + (255,))
+    return img
+
+
+def st_socket(color, shape, state=""):
+    """shape: 'square' (flow), 'circle' (value input) or 'triangle' (value output)."""
+    w = h = 13
+    img = canvas(w, h)
+    d = ImageDraw.Draw(img)
+    c = 6.5
+    big = state != ""
+    ring = ST_CREAM if big else ST_RING
+    fill = color if state != "_connecting" else mix(color, (255, 255, 255), 0.75)
+    if shape == "square":
+        r = 4.4 if big else 3.6
+        d.rounded_rectangle(box(c - r - 1.3, c - r - 1.3, c + r + 1.3, c + r + 1.3), radius=2.4 * SS, fill=ring + (255,))
+        d.rounded_rectangle(box(c - r, c - r, c + r, c + r), radius=1.6 * SS, fill=fill + (255,))
+    elif shape == "circle":
+        r = 4.8 if big else 3.9
+        d.ellipse(box(c - r - 1.4, c - r - 1.4, c + r + 1.4, c + r + 1.4), fill=ring + (255,))
+        d.ellipse(box(c - r, c - r, c + r, c + r), fill=fill + (255,))
+    else:
+        s = 1.25 if big else 1.0
+        outer = [(c - 5.6 * s, c - 3.6 * s), (c + 5.6 * s, c - 3.6 * s), (c, c + 4.9 * s)]
+        inner = [(c - 3.7 * s, c - 2.3 * s), (c + 3.7 * s, c - 2.3 * s), (c, c + 2.9 * s)]
+        d.polygon([(x * SS, y * SS) for x, y in outer], fill=ring + (255,))
+        d.polygon([(x * SS, y * SS) for x, y in inner], fill=fill + (255,))
+    return finish(img, w, h)
+
+
+def st_variable(ring_color, fill=None):
+    w = h = 57
+    shape = (0.5, 0.5, 50.5, 50.5)
+    img = canvas(w, h)
+    img.alpha_composite(shadow(w, h, shape, 0, offset=(2, 2.8), blur=2.8, alpha=120, ellipse=True))
+    d = ImageDraw.Draw(img)
+    ring = 2.4
+    d.ellipse(box(*shape), fill=ring_color + (255,))
+    inner = (shape[0] + ring, shape[1] + ring, shape[2] - ring, shape[3] - ring)
+    d.ellipse(box(*inner), fill=(fill or mix(ring_color, ST_VARIABLE_FILL, 0.25)) + (255,))
+    # a hint of Classic's gloss on the top half
+    gloss = canvas(w, h)
+    ImageDraw.Draw(gloss).ellipse(box(inner[0] + 6, inner[1] + 3.5, inner[2] - 6, 25.5), fill=(255, 255, 255, 16))
+    img.alpha_composite(gloss)
+    return finish(img, w, h)
+
+
+def st_prop(color, size, selected=False):
+    w, h = size
+    shape = (1, 1, 13, 13 + (h - 19))
+    img = canvas(w, h)
+    img.alpha_composite(shadow(w, h, shape, 3, alpha=120))
+    d = ImageDraw.Draw(img)
+    border = ST_CREAM if selected else color
+    d.rounded_rectangle(box(*shape), radius=3.8 * SS, fill=border + (255,))
+    d.rounded_rectangle(box(shape[0] + 1.3, shape[1] + 1.3, shape[2] - 1.3, shape[3] - 1.3), radius=2.8 * SS,
+                        fill=mix(color, ST_VARIABLE_FILL, 0.22) + (255,))
+    return finish(img, w, h)
+
+
+def st_comment(selected=False):
+    w = h = 13
+    img = canvas(w, h)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle(box(0, 0, 13, 13), radius=4.5 * SS, fill=(255, 255, 255, 240 if selected else 200))
+    inset = 2 if selected else 1.3
+    d.rounded_rectangle(box(inset, inset, 13 - inset, 13 - inset), radius=3.6 * SS, fill=(255, 255, 255, 105))
+    return finish(img, w, h)
+
+
+def st_selectionbox():
+    w = h = 13
+    img = canvas(w, h)
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle(box(0, 0, 13, 13), radius=3 * SS, fill=ST_CREAM + (230,))
+    d.rounded_rectangle(box(1, 1, 12, 12), radius=2.2 * SS, fill=ST_CREAM + (38,))
+    return finish(img, w, h)
+
+
+def st_external(selected=False):
+    w, h = 61, 59
+    shape = (1, 1, 53, 52)
+    img = canvas(w, h)
+    img.alpha_composite(shadow(w, h, shape, 0, offset=(2, 2.8), blur=2.8, alpha=120, ellipse=True))
+    d = ImageDraw.Draw(img)
+    if selected:
+        d.ellipse(box(*shape), fill=ST_CREAM + (255,))
+        shape = (shape[0] + 3, shape[1] + 3, shape[2] - 3, shape[3] - 3)
+    d.ellipse(box(*shape), fill=ST_NODES["event"][2] + (255,))
+    d.ellipse(box(shape[0] + 2.6, shape[1] + 2.6, shape[2] - 2.6, shape[3] - 2.6), fill=ST_NODES["event"][1] + (255,))
+    return finish(img, w, h)
+
+
+def write_studio():
+    os.makedirs(os.path.join(STUDIO, "elements"), exist_ok=True)
+    folder_meta(STUDIO)
+    folder_meta(os.path.join(STUDIO, "elements"))
+
+    save(Image.new("RGB", (16, 16), ST_CANVAS), "uscript_background.png", STUDIO)
+
+    for kind in ("default", "event", "selected", "deprecated"):
+        save(st_node(kind), "elements/uscript_node_%s.png" % kind, STUDIO)
+    for kind in ("default", "event", "selected"):
+        save(st_mini(kind), "elements/uscript_node_%s_mini.png" % kind, STUDIO)
+
+    for owner, io_color in (("default", ST_FLOW), ("event", ST_EVENT_FLOW)):
+        for state in ("", "_connecting", "_selected"):
+            save(st_socket(io_color, "square", state), "elements/uscript_node_%s_socket_io%s.png" % (owner, state), STUDIO)
+            for type_name, color in ST_TYPES.items():
+                save(st_socket(color, "circle", state), "elements/uscript_node_%s_socket_variable_%s%s.png" % (owner, type_name, state), STUDIO)
+                save(st_socket(color, "triangle", state), "elements/uscript_node_%s_socket_out_variable_%s%s.png" % (owner, type_name, state), STUDIO)
+
+    for type_name, color in ST_TYPES.items():
+        save(st_variable(color), "elements/uscript_variable_%s.png" % type_name, STUDIO)
+    save(st_variable((185, 120, 255), fill=(52, 34, 80)), "elements/uscript_variable_owner.png", STUDIO)
+    save(st_variable(ST_CREAM, fill=(54, 58, 70)), "elements/uscript_variable_selected.png", STUDIO)
+
+    for name in os.listdir(os.path.join(CLASSIC, "elements")):
+        if name.startswith("uscript_property_") and name.endswith(".png"):
+            type_name = name[len("uscript_property_"):-4]
+            size = Image.open(os.path.join(CLASSIC, "elements", name)).size
+            if type_name == "selected":
+                save(st_prop((160, 168, 182), size, selected=True), "elements/" + name, STUDIO)
+            else:
+                save(st_prop(ST_TYPES.get(type_name, ST_TYPES["default"]), size), "elements/" + name, STUDIO)
+
+    save(st_comment(), "elements/uscript_comment.png", STUDIO)
+    save(st_comment(selected=True), "elements/uscript_comment_selected.png", STUDIO)
+    save(st_selectionbox(), "elements/uscript_selectionbox.png", STUDIO)
+    save(st_external(), "elements/uscript_externalconnection.png", STUDIO)
+    save(st_external(selected=True), "elements/uscript_externalconnection_selected.png", STUDIO)
+
+    classic = {n for n in os.listdir(os.path.join(CLASSIC, "elements")) if n.endswith(".png")}
+    studio = {n for n in os.listdir(os.path.join(STUDIO, "elements")) if n.endswith(".png")}
+    missing = sorted(classic - studio)
+    assert not missing, "No Studio texture for: %s" % missing
+    for n in classic:
+        a = Image.open(os.path.join(CLASSIC, "elements", n)).size
+        b = Image.open(os.path.join(STUDIO, "elements", n)).size
+        assert a == b, "%s: Classic %s, Studio %s" % (n, a, b)
+    print("Studio skin written:", len(studio), "elements")
+
+
+if __name__ == "__main__":
+    write_studio()

@@ -130,7 +130,7 @@ namespace Detox.Editor
          }
       }
 
-      /// <summary>Canvas theme: 0 = Classic, 1 = Modern.</summary>
+      /// <summary>Canvas theme: 0 = Classic, 1 = Modern, 2 = Studio.</summary>
       public static int Theme
       {
          get { return EditorPrefs.GetInt(uScriptConfig.ThemePrefKey, 0); }
@@ -151,7 +151,7 @@ namespace Detox.Editor
          set { EditorPrefs.SetBool("DetoxStudios.uScript.GridDots", value); }
       }
 
-      /// <summary>Show small icons in node title bars (Modern theme).</summary>
+      /// <summary>Show small icons in node title bars (Modern and Studio themes).</summary>
       public static bool ShowNodeIcons
       {
          get { return EditorPrefs.GetBool("DetoxStudios.uScript.ShowNodeIcons", true); }

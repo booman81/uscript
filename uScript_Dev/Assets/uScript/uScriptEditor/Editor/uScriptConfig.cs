@@ -46,8 +46,23 @@ public static class uScriptConfig
    /// <summary>EditorPrefs key of the canvas theme (0 = Classic, 1 = Modern).</summary>
    public const string ThemePrefKey = "DetoxStudios.uScript.Theme";
 
+   /// <summary>The canvas theme in use: 0 = Classic, 1 = Modern, 2 = Studio.</summary>
+   public static int Theme { get; private set; }
+
    /// <summary>True when the Modern canvas theme is in use.</summary>
-   public static bool IsModern { get; private set; }
+   public static bool IsModern { get { return Theme == 1; } }
+
+   /// <summary>True when the Studio canvas theme (a refreshed Classic) is in use.</summary>
+   public static bool IsStudio { get { return Theme == 2; } }
+
+   /// <summary>Node title icons are offered by every theme but Classic.</summary>
+   public static bool ThemeHasNodeIcons { get { return Theme != 0; } }
+
+   /// <summary>Studio theme grid colors: lines, and the lighter dots.</summary>
+   public static readonly Color StudioGridMajor = new Color(106 / 255f, 116 / 255f, 134 / 255f);
+   public static readonly Color StudioGridMinor = new Color(92 / 255f, 101 / 255f, 118 / 255f);
+   public static readonly Color StudioDotMajor = new Color(0.47f, 0.51f, 0.59f);
+   public static readonly Color StudioDotMinor = new Color(0.40f, 0.44f, 0.51f);
 
    /// <summary>Modern theme: color of the links between In/Out sockets.</summary>
    public static readonly Color ModernFlowLinkColor = new Color(205 / 255f, 212 / 255f, 228 / 255f);
@@ -77,12 +92,12 @@ public static class uScriptConfig
    /// </summary>
    public static void ApplyTheme()
    {
-      IsModern = UnityEditor.EditorPrefs.GetInt(ThemePrefKey, 0) == 1;
+      Theme = Mathf.Clamp(UnityEditor.EditorPrefs.GetInt(ThemePrefKey, 0), 0, 2);
 
-      var skin = IsModern ? ConstantPaths.SkinModern : ConstantPaths.Skin;
-      if (IsModern && !System.IO.Directory.Exists(skin + "/elements"))
+      var skin = Theme == 1 ? ConstantPaths.SkinModern : Theme == 2 ? ConstantPaths.SkinStudio : ConstantPaths.Skin;
+      if (Theme != 0 && !System.IO.Directory.Exists(skin + "/elements"))
       {
-         IsModern = false;
+         Theme = 0;
          skin = ConstantPaths.Skin;
       }
 
@@ -312,6 +327,7 @@ public static class uScriptConfig
          Gizmos = string.Format("{0}/Editor/_Gizmos", Editor);
          Skin = string.Format("{0}/Editor/_GUI/uScriptDefault", Editor);
          SkinModern = string.Format("{0}/Editor/_GUI/uScriptModern", Editor);
+         SkinStudio = string.Format("{0}/Editor/_GUI/uScriptStudio", Editor);
          Skins = string.Format("{0}/Editor/Skins", Editor);
          Templates = string.Format("{0}/Editor/_Templates", Editor);
 
@@ -334,6 +350,8 @@ public static class uScriptConfig
       public static string Skin { get; private set; }
 
       public static string SkinModern { get; private set; }
+
+      public static string SkinStudio { get; private set; }
 
       public static string Skins { get; private set; }
 
@@ -743,12 +761,12 @@ public class uScriptDefaultStyle : uScriptStyle
 
          var styleBackground = UnityEditor.AssetDatabase.LoadAssetAtPath(relativePath + "/" + name, typeof(Texture2D)) as Texture2D;
 
-         if (styleBackground == null && this.modern)
+         if (styleBackground == null && this.skinPath != uScriptConfig.ConstantPaths.Skin)
          {
-            // A Modern texture that Unity has not imported (yet): use the Classic one so the canvas still works
+            // A Modern or Studio texture that Unity has not imported (yet): use the Classic one so the canvas still works
             var classicPath = uScriptConfig.ConstantPaths.RelativePath(uScriptConfig.ConstantPaths.Skin + "/elements");
             styleBackground = UnityEditor.AssetDatabase.LoadAssetAtPath(classicPath + "/" + name, typeof(Texture2D)) as Texture2D;
-            UnityEngine.Debug.LogWarning("uScript: the Modern theme texture " + name + " could not be loaded, so the Classic one is used. Reimporting the uScript package may fix this.");
+            UnityEngine.Debug.LogWarning("uScript: the theme texture " + name + " could not be loaded, so the Classic one is used. Reimporting the uScript package may fix this.");
          }
 
          uScriptDebug.Assert(styleBackground != null, string.Format("The style background texture could not be loaded: {0}", name));

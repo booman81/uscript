@@ -1746,8 +1746,10 @@ namespace Detox.FlowChart
          float height = uScript.Instance.NodeWindowRect.height / Zoom;
          var area = new UnityEngine.Rect(0, 0, width, height);
 
-         UnityEngine.Color minor = uScriptConfig.IsModern ? new UnityEngine.Color(0.24f, 0.26f, 0.33f) : Preferences.GridColorMinor;
-         UnityEngine.Color major = uScriptConfig.IsModern ? new UnityEngine.Color(0.32f, 0.35f, 0.44f) : Preferences.GridColorMajor;
+         UnityEngine.Color minor = uScriptConfig.IsModern ? new UnityEngine.Color(0.24f, 0.26f, 0.33f)
+                                 : uScriptConfig.IsStudio ? uScriptConfig.StudioDotMinor : Preferences.GridColorMinor;
+         UnityEngine.Color major = uScriptConfig.IsModern ? new UnityEngine.Color(0.32f, 0.35f, 0.44f)
+                                 : uScriptConfig.IsStudio ? uScriptConfig.StudioDotMajor : Preferences.GridColorMajor;
 
          DrawDotLayer(area, s_DotTexture, Preferences.GridSize, minor);
 
@@ -1839,8 +1841,10 @@ namespace Detox.FlowChart
          else if ( Preferences.ShowGrid == true )
          {
             float g;
-            UnityEngine.Color gridMajor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMajor : Preferences.GridColorMajor;
-            UnityEngine.Color gridMinor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMinor : Preferences.GridColorMinor;
+            UnityEngine.Color gridMajor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMajor
+                                        : uScriptConfig.IsStudio ? uScriptConfig.StudioGridMajor : Preferences.GridColorMajor;
+            UnityEngine.Color gridMinor = uScriptConfig.IsModern ? uScriptConfig.ModernGridMinor
+                                        : uScriptConfig.IsStudio ? uScriptConfig.StudioGridMinor : Preferences.GridColorMinor;
 
             int gridSize = Preferences.GridSize;
 
