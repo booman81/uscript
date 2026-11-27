@@ -3811,8 +3811,8 @@ namespace Detox.ScriptEditor
                // Draw the socket value label under the socket
                if ( null != socket.DefaultValue )
                {
-                  int charsForLabel = (int)(((xStep + textLength.Width) * 1.75f) / charLength);
-                  charsForLabel = Math.Max( 12, charsForLabel );
+                  //values under sockets show up to 20 characters
+                  int charsForLabel = 20;
 
                   if (socket.Type.Contains("Mask"))
                   {
