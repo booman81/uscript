@@ -249,6 +249,7 @@ A List Box reads or writes one item of a list, with no node in between. It works
 | Use Variable | On: type the **name** of a graph variable (for example `Selected_Index`) and its value picks the item each time. |
 | Add Key If Missing | Key mode: writing to a key that isn't in the list adds it to the end, e.g. writing 50 to `Mana` adds `Mana,50`. |
 | Default Value | What the box gives when the key or position is missing (e.g. `100`). Empty = 0, empty text or False. Reading only. |
+| Show Default Socket | Adds a **Default** socket after Position/Key. Link a variable into it to set the default from the graph. |
 | Give Out As | Text lists only: Text, Whole Number, Decimal or True/False. |
 
 Good to know:

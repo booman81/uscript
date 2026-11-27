@@ -39,14 +39,61 @@ namespace Detox.ScriptEditor
          return selector;
       }
 
+      /// <summary>The socket that takes the Default Value from a variable, when Show Default Socket is ticked.</summary>
+      public const string DefaultName = "DefaultValue";
+
+      public static Parameter DefaultParameter(EntityProperty box)
+      {
+         var missing = new Parameter();
+         missing.Name = DefaultName;
+         missing.FriendlyName = "Default";
+         missing.Type = box.Parameter.Type;
+         missing.AutoLinkType = box.Parameter.Type;
+         missing.Default = Read(box).Default ?? string.Empty;
+         missing.ReferenceGuid = string.Empty;
+         missing.Input = true;
+         missing.Output = false;
+         missing.State = Parameter.VisibleState.Visible;
+         return missing;
+      }
+
+      /// <summary>The extra bottom sockets after List: Position/Key, and Default when shown.</summary>
+      public static Parameter[] ExtraParameters(EntityProperty box)
+      {
+         if (Read(box).ShowDefaultSocket && HasDefault(box))
+         {
+            return new[] { SelectorParameter(box), DefaultParameter(box) };
+         }
+
+         return new[] { SelectorParameter(box) };
+      }
+
+      /// <summary>One of the extra sockets by name, or Parameter.Empty.</summary>
+      public static Parameter ExtraParameter(EntityNode node, string name)
+      {
+         if (!Is(node)) return Parameter.Empty;
+
+         foreach (Parameter p in ExtraParameters((EntityProperty)node))
+         {
+            if (p.Name == name) return p;
+         }
+
+         return Parameter.Empty;
+      }
+
       /// <summary>True when a link is connected to the box's Position/Key socket.</summary>
       public static bool SelectorLinked(ScriptEditor script, EntityProperty box)
+      {
+         return SocketLinked(script, box, SelectorName);
+      }
+
+      public static bool SocketLinked(ScriptEditor script, EntityProperty box, string socketName)
       {
          if (script == null) return false;
 
          foreach (LinkNode link in script.Links)
          {
-            if (link.Destination.Guid == box.Guid && link.Destination.Anchor == SelectorName) return true;
+            if (link.Destination.Guid == box.Guid && link.Destination.Anchor == socketName) return true;
          }
 
          return false;
@@ -66,6 +113,9 @@ namespace Detox.ScriptEditor
 
          /// <summary>What the box gives when the item is missing. Empty = 0, empty text or False.</summary>
          public string Default;
+
+         /// <summary>Shows a Default socket after List and Position/Key, to take the default from a variable.</summary>
+         public bool ShowDefaultSocket;
       }
 
       /// <summary>The list types offered in the Add menu, with their menu names.</summary>
@@ -159,12 +209,17 @@ namespace Detox.ScriptEditor
             settings.Default = Unescape(parts[5]);
          }
 
+         if (parts.Length > 6)
+         {
+            settings.ShowDefaultSocket = parts[6] == "1";
+         }
+
          return settings;
       }
 
       public static string Write(Settings settings)
       {
-         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0") + "|" + Escape(settings.Default ?? string.Empty);
+         return Prefix + "|" + settings.FindBy + "|" + Escape(settings.Selector ?? string.Empty) + "|" + (settings.SelectorIsVariable ? "1" : "0") + "|" + (settings.AddIfMissing ? "1" : "0") + "|" + Escape(settings.Default ?? string.Empty) + "|" + (settings.ShowDefaultSocket ? "1" : "0");
       }
 
       /// <summary>Second line of the box, such as: Key "Health" · float, or: Position = Selected_Index.</summary>
@@ -247,7 +302,8 @@ namespace Detox.ScriptEditor
          "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
          "Add new items with a list node.\n" +
          "\u2022 Default Value: what the box gives when the key or position is missing (for example 100). " +
-         "Empty means 0, empty text or False. It is only for reading; it never changes the list.\n" +
+         "Empty means 0, empty text or False. It is only for reading; it never changes the list. " +
+         "Tick Show Default Socket to add a Default socket after Position/Key and link a variable into it instead.\n" +
          "\u2022 Add Key If Missing (Key mode): writing to a key that is not in the list adds the key and its value to the end, " +
          "for example writing 50 to Mana adds \"Mana, 50\".\n" +
          "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
@@ -262,6 +318,9 @@ namespace Detox.ScriptEditor
                return "The chosen list item. Link it into a node input to read it; link a node output into it to write the item back to the list.";
             case "Instance":
                return "The list to read from and write to. Link a list variable here (one link only).";
+            case DefaultName:
+               return "Optional. Link a variable here to set the Default Value: what the box gives when the item is missing. " +
+                      "When linked, it is used instead of the Default Value typed in the Properties panel.";
             case SelectorName:
                return "Optional. Link a variable here to choose the item: a number for Position, or text for Key. " +
                       "When linked, it is used instead of the Position or Key typed in the Properties panel.";
@@ -300,6 +359,7 @@ namespace Detox.ScriptEditor
          if (HasDefault(box))
          {
             parameters.Add(Field("ListBoxDefault", "Default Value", "System.String", settings.Default ?? string.Empty));
+            parameters.Add(Field("ListBoxShowDefaultSocket", "Show Default Socket", "System.Boolean", settings.ShowDefaultSocket ? "true" : "false"));
          }
 
          return parameters.ToArray();
@@ -326,6 +386,9 @@ namespace Detox.ScriptEditor
                   break;
                case "ListBoxDefault":
                   settings.Default = (field.Default ?? string.Empty).Trim();
+                  break;
+               case "ListBoxShowDefaultSocket":
+                  settings.ShowDefaultSocket = field.Default == "true";
                   break;
                case "ListBoxAddIfMissing":
                   settings.AddIfMissing = field.Default == "true";

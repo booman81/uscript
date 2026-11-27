@@ -3599,7 +3599,7 @@ namespace Detox.ScriptEditor
 
          if ( node.Instance.Name == parameterName ) return node.Instance;
 
-         if ( parameterName == ListBox.SelectorName && ListBox.Is(node) ) return ListBox.SelectorParameter( (EntityProperty) node );
+         if ( ListBox.Is(node) ) return ListBox.ExtraParameter( node, parameterName );
 
          return Parameter.Empty;
       }
@@ -4226,16 +4226,18 @@ namespace Detox.ScriptEditor
                }
             }
 
-            //the Position/Key socket of a List Box
-            if ( link.Destination.Anchor == ListBox.SelectorName && ListBox.Is(dest) )
+            //the Position/Key and Default sockets of a List Box
+            Parameter listBoxSocket = ListBox.ExtraParameter( dest, link.Destination.Anchor );
+
+            if ( listBoxSocket != Parameter.Empty )
             {
                if ( false == (source is LocalNode || source is ExternalConnection || source is EntityProperty) )
                {
-                  reason = "Link a variable into the List Box's " + ListBox.SelectorParameter((EntityProperty) dest).FriendlyName + " socket";
+                  reason = "Link a variable into the List Box's " + listBoxSocket.FriendlyName + " socket";
                   return false;
                }
 
-               destParam = ListBox.SelectorParameter( (EntityProperty) dest );
+               destParam = listBoxSocket;
             }
          }
 

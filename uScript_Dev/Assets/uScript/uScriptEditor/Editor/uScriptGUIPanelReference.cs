@@ -364,7 +364,10 @@ namespace Detox.Editor
 
          if (Detox.ScriptEditor.ListBox.Is(node))
          {
-            this.DrawFormattedParameter(Detox.ScriptEditor.ListBox.SelectorParameter((EntityProperty)node), nodeType);
+            foreach (var extra in Detox.ScriptEditor.ListBox.ExtraParameters((EntityProperty)node))
+            {
+               this.DrawFormattedParameter(extra, nodeType);
+            }
          }
       }
 

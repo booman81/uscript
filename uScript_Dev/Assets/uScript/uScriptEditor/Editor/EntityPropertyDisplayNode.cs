@@ -98,26 +98,29 @@ namespace Detox.ScriptEditor
             sockets.Add( socket );
          }
 
-         //List Box: a second bottom socket for the position or key
+         //List Box: more bottom sockets after List, for the position or key and (when shown) the default value
          if ( ListBox.Is(entityProperty) )
          {
-            Parameter selector = ListBox.SelectorParameter( entityProperty );
-
-            socket = new Socket( );
-            socket.Alignment = Socket.Align.Bottom;
-            socket.InternalName = selector.Name;
-            socket.FriendlyName = selector.FriendlyName;
-            socket.Type = selector.Type;
-            socket.Input  = true;
-            socket.Output = false;
-
-            //show the typed position or key under the socket, like other nodes show their values
-            if ( null == m_Ctrl || false == ListBox.SelectorLinked(m_Ctrl.ScriptEditor, entityProperty) )
+            foreach ( Parameter extra in ListBox.ExtraParameters( entityProperty ) )
             {
-               socket.DefaultValue = ListBox.Read(entityProperty).Selector ?? string.Empty;
-            }
+               socket = new Socket( );
+               socket.Alignment = Socket.Align.Bottom;
+               socket.InternalName = extra.Name;
+               socket.FriendlyName = extra.FriendlyName;
+               socket.Type = extra.Type;
+               socket.Input  = true;
+               socket.Output = false;
 
-            sockets.Add( socket );
+               //show the typed value under the socket, like other nodes show their values
+               if ( null == m_Ctrl || false == ListBox.SocketLinked(m_Ctrl.ScriptEditor, entityProperty, extra.Name) )
+               {
+                  socket.DefaultValue = extra.Name == ListBox.SelectorName
+                                        ? ListBox.Read(entityProperty).Selector ?? string.Empty
+                                        : extra.Default;
+               }
+
+               sockets.Add( socket );
+            }
          }
 
          socket = new Socket( );

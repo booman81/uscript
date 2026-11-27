@@ -5219,18 +5219,7 @@ namespace Detox.ScriptEditor
          //which item: a variable linked to the Position/Key socket, a named variable, or a fixed position or key
          string selector;
 
-         LinkNode[] selectorLinks = FindLinksByDestination(listBox.Guid, ListBox.SelectorName);
-         EntityNode selectorSource = selectorLinks.Length > 0 ? m_Script.GetNode(selectorLinks[0].Source.Guid) : null;
-         string selectorValue = null;
-
-         if (selectorSource is LocalNode || selectorSource is ExternalConnection)
-         {
-            selectorValue = CSharpName(selectorSource);
-         }
-         else if (selectorSource is EntityProperty && ((EntityProperty)selectorSource).Parameter.Output)
-         {
-            selectorValue = CSharpRefreshGetPropertyDeclaration((EntityProperty)selectorSource) + "( )";
-         }
+         string selectorValue = ListBoxSocketValue(listBox, ListBox.SelectorName);
 
          if (selectorValue != null)
          {
@@ -5263,7 +5252,10 @@ namespace Detox.ScriptEditor
          string write;
 
          //the Default Value, given when the item is missing
-         string missingCode = ListBox.DefaultCode(listBox);
+         string missingCode = ListBox.Read(listBox).ShowDefaultSocket && ListBox.HasDefault(listBox)
+                              ? ListBoxSocketValue(listBox, ListBox.DefaultName)
+                              : null;
+         if (missingCode == null) missingCode = ListBox.DefaultCode(listBox);
          string missing = missingCode != null ? ", " + missingCode : "";
 
          if (strings)
@@ -5323,6 +5315,25 @@ namespace Detox.ScriptEditor
          --m_TabStack;
          AddCSharpLine("}");
          AddCSharpLine("");
+      }
+
+      //the code for the variable linked to one of a List Box's extra sockets, or null when nothing is linked
+      private string ListBoxSocketValue(EntityProperty listBox, string socketName)
+      {
+         LinkNode[] links = FindLinksByDestination(listBox.Guid, socketName);
+         EntityNode source = links.Length > 0 ? m_Script.GetNode(links[0].Source.Guid) : null;
+
+         if (source is LocalNode || source is ExternalConnection)
+         {
+            return CSharpName(source);
+         }
+
+         if (source is EntityProperty && ((EntityProperty)source).Parameter.Output)
+         {
+            return CSharpRefreshGetPropertyDeclaration((EntityProperty)source) + "( )";
+         }
+
+         return null;
       }
 
       //unique function name per entity property to get
