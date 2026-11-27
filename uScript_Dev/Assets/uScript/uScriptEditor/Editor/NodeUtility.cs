@@ -83,6 +83,11 @@ public sealed partial class uScript
 
    public static string FindNodeDescription(string type, EntityNode node)
    {
+      if (Detox.ScriptEditor.ListBox.Is(type))
+      {
+         return Detox.ScriptEditor.ListBox.ReferenceText;
+      }
+
       // Check non-logic, non-event types first...
       // Structs can't have attributes, so we have to specify this information here, explicitly
       if (type == "CommentNode")

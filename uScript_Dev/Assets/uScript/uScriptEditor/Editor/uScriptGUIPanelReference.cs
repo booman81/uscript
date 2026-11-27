@@ -359,7 +359,7 @@ namespace Detox.Editor
          // Display an "Instance" parameter if necessary
          if (node.Instance.Input)
          {
-            this.DrawFormattedParameter(node.Instance);
+            this.DrawFormattedParameter(node.Instance, Detox.ScriptEditor.ListBox.Is(node) ? nodeType : string.Empty);
          }
       }
 

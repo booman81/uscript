@@ -2258,6 +2258,12 @@ namespace Detox.ScriptEditor
             //          and could fill the parameters itself
             EntityNode entityNode = ((DisplayNode)node).EntityNode;
 
+            if (ListBox.Is(entityNode))
+            {
+               gridParameters.Add( ((DisplayNode)node).GetPropertyGridParameters( ) );
+               continue;
+            }
+
             string name = node.Name;
 
             if (node is EntityPropertyDisplayNode)

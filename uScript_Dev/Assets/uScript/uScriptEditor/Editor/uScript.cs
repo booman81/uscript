@@ -5657,6 +5657,11 @@ public sealed partial class uScript : EditorWindow
 
    public static string FindParameterDescription(string type, Parameter p)
    {
+      if (Detox.ScriptEditor.ListBox.Is(type))
+      {
+         return Detox.ScriptEditor.ListBox.ParameterHelp(p.Name);
+      }
+
       // Check non-logic, non-event types first
       //
       // Structures can't have attributes and some parameters are manually added to some nodes. To

@@ -161,6 +161,49 @@ namespace Detox.ScriptEditor
          return "(" + uScriptConfig.Variable.FriendlyName(box.Instance.Type) + ")";
       }
 
+      // ------------------------------------------------------------ Reference panel help
+
+      public const string ReferenceText =
+         "Reads or writes one item of a list, with no node in between. It works like a property box: " +
+         "link it into a node input to read the item, or link a node output into it to write the item back to the list.\n\n" +
+         "HOW TO USE\n" +
+         "1. Link your list variable into the List socket at the bottom of the box.\n" +
+         "2. Select the box and choose the item in the Properties panel.\n" +
+         "3. Link the box into the nodes that need the value.\n\n" +
+         "CHOOSING THE ITEM\n" +
+         "\u2022 Find By Position: 1 = first item, 2 = second, -1 = last, -2 = second to last.\n" +
+         "\u2022 Find By Key (text lists only): for a list like \"Health, 3, Damage, 6\", the key Health gives 3. " +
+         "Keys ignore upper/lower case and spaces around them.\n" +
+         "\u2022 Use Variable: turn it on and type the name of a graph variable (for example Selected_Index) " +
+         "in the Position or Key field. The variable's current value picks the item every time the box is used.\n" +
+         "\u2022 Give Out As (text lists only): Text, Whole Number, Decimal or True/False. " +
+         "\"12.5\" and \"12,5\" both read as 12.5; \"true\", \"1\", \"yes\" and \"on\" read as True.\n\n" +
+         "EXAMPLES\n" +
+         "\u2022 Stats list \"Health, 100, Damage, 6\": a box with Key Health, Give Out As Whole Number, gives 100. " +
+         "Link it into Add Int, then link the result back into the box to save the new health.\n" +
+         "\u2022 Int list \"1, 12, 56\": Position 3 gives 56. Position -1 also gives 56.\n" +
+         "\u2022 GameObject list of spawn points: Use Variable on, Position = Spawn_Index, gives the current spawn point.\n\n" +
+         "GOOD TO KNOW\n" +
+         "\u2022 The value is read fresh each time a node uses it, so it always matches the list.\n" +
+         "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
+         "Add new items or keys with a list node.\n" +
+         "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
+         "A Key \"\" or Position ? means nothing is chosen yet.\n" +
+         "\u2022 After changing Give Out As, re-link the box if a link no longer fits the new type.";
+
+      public static string ParameterHelp(string parameterName)
+      {
+         switch (parameterName)
+         {
+            case ValueName:
+               return "The chosen list item. Link it into a node input to read it; link a node output into it to write the item back to the list.";
+            case "Instance":
+               return "The list to read from and write to. Link a list variable here (one link only).";
+            default:
+               return parameterName;
+         }
+      }
+
       // ------------------------------------------------------------ properties panel
 
       public const string PanelKey = "List Box";
