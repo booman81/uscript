@@ -110,6 +110,13 @@ namespace Detox.ScriptEditor
             socket.Type = selector.Type;
             socket.Input  = true;
             socket.Output = false;
+
+            //show the typed position or key under the socket, like other nodes show their values
+            if ( null == m_Ctrl || false == ListBox.SelectorLinked(m_Ctrl.ScriptEditor, entityProperty) )
+            {
+               socket.DefaultValue = ListBox.Read(entityProperty).Selector ?? string.Empty;
+            }
+
             sockets.Add( socket );
          }
 

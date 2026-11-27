@@ -169,15 +169,15 @@ namespace Detox.ScriptEditor
          }
          else if (settings.SelectorIsVariable)
          {
-            text = (settings.FindBy == uScript_ListBoxFindBy.Key ? "Key = " : "Position = ") + (selector.Length > 0 ? selector : "?");
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key from variable" : "Position from variable";
          }
-         else if (settings.FindBy == uScript_ListBoxFindBy.Key)
+         else if (selector.Length == 0)
          {
-            text = "Key \"" + selector + "\"";
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "Key not set" : "Position not set";
          }
          else
          {
-            text = "Position " + (selector.Length > 0 ? selector : "?");
+            text = settings.FindBy == uScript_ListBoxFindBy.Key ? "By Key" : "By Position";
          }
 
          if (IsStringList(box) && box.Parameter.Type != "System.String")
@@ -231,7 +231,7 @@ namespace Detox.ScriptEditor
          "\u2022 A position outside the list, or a missing key, reads as empty, 0 or False, and writing to it does nothing. " +
          "Add new items or keys with a list node.\n" +
          "\u2022 The box title shows the list type, and the line under it shows what it picks. " +
-         "A Key \"\" or Position ? means nothing is chosen yet.\n" +
+         "Key not set or Position not set means nothing is chosen yet.\n" +
          "\u2022 After changing Give Out As, re-link the box if a link no longer fits the new type.";
 
       public static string ParameterHelp(string parameterName)
