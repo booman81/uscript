@@ -857,6 +857,14 @@ namespace Detox.ScriptEditor
          ScriptEditor scriptEditor = new ScriptEditor( "", ScriptEditor.EntityDescs, ScriptEditor.LogicNodes );
          if ( true == scriptEditor.Read( null, new System.IO.MemoryStream(binary), false) )
          {
+            PasteScript( scriptEditor, cursorPoint );
+         }
+      }
+
+      /// <summary>Adds all nodes and links of a small script to the open graph, with new ids, as one undo step.</summary>
+      public void PasteScript( ScriptEditor scriptEditor, Point cursorPoint )
+      {
+         {
             List<Guid> guidsToSelect = new List<Guid>( );
 
             Hashtable remappedGuid = new Hashtable( );
@@ -1179,6 +1187,60 @@ namespace Detox.ScriptEditor
       private void m_MenuPaste_Click(object sender, EventArgs e)
       {
          PasteFromClipboard( ContextCursor );
+      }
+
+      private void m_MenuCopyText_Click(object sender, EventArgs e)
+      {
+         CopySelectionAsText( );
+      }
+
+      private void m_MenuPasteText_Click(object sender, EventArgs e)
+      {
+         PasteTextNodes( ContextCursor );
+      }
+
+      /// <summary>Copies the selected nodes and the links between them as readable text (see uScriptTextGraph).</summary>
+      public void CopySelectionAsText( )
+      {
+         HashSet<Guid> selected = new HashSet<Guid>( );
+         foreach ( DisplayNode node in SelectedNodes )
+         {
+            if ( null != node ) selected.Add( node.EntityNode.Guid );
+         }
+
+         if ( selected.Count == 0 ) return;
+
+         string name = string.IsNullOrEmpty( m_ScriptEditor.Name ) ? "" : System.IO.Path.GetFileNameWithoutExtension( m_ScriptEditor.Name );
+         UnityEditor.EditorGUIUtility.systemCopyBuffer = uScriptTextGraph.Write( m_ScriptEditor, name, selected );
+
+         uScriptDebug.Log( "uScript: copied " + selected.Count + " node(s) as text. Paste them into a chat with your AI assistant.", uScriptDebug.Type.Message );
+      }
+
+      /// <summary>Turns text nodes from the clipboard into real nodes and links at the given point (one undo step).</summary>
+      public void PasteTextNodes( Point cursorPoint )
+      {
+         string text = UnityEditor.EditorGUIUtility.systemCopyBuffer;
+         if ( false == uScriptTextGraph.IsText( text ) )
+         {
+            uScriptDebug.Log( "uScript: the clipboard has no text nodes. They start with " + uScriptTextGraph.Header, uScriptDebug.Type.Warning );
+            return;
+         }
+
+         List<string> warnings = new List<string>( );
+         ScriptEditor script = uScriptTextGraph.Read( text, m_ScriptEditor, warnings );
+
+         if ( null == script )
+         {
+            uScriptDebug.Log( "uScript: no nodes could be made from the text.\n" + string.Join( "\n", warnings.ToArray( ) ), uScriptDebug.Type.Warning );
+            return;
+         }
+
+         PasteScript( script, cursorPoint );
+
+         if ( warnings.Count > 0 )
+         {
+            uScriptDebug.Log( "uScript: text nodes pasted, with " + warnings.Count + " problem(s):\n" + string.Join( "\n", warnings.ToArray( ) ), uScriptDebug.Type.Warning );
+         }
       }
 
       private void m_MenuExpand_Click(object sender, EventArgs e)
@@ -2724,6 +2786,37 @@ namespace Detox.ScriptEditor
                pasteMenu.Click += new System.EventHandler(m_MenuPaste_Click);
 
                m_ContextMenuStrip.Items.Add( pasteMenu );
+            }
+         }
+
+         // nodes as readable text, for AI assistants
+         {
+            bool canCopyText  = m_FlowChart.SelectedNodes.Length > 0;
+            bool canPasteText = uScriptTextGraph.IsText( UnityEditor.EditorGUIUtility.systemCopyBuffer );
+
+            if ( canCopyText || canPasteText )
+            {
+               m_ContextMenuStrip.Items.Add( new ToolStripSeparator( ) );
+            }
+
+            if ( canCopyText )
+            {
+               ToolStripMenuItem copyTextMenu = new ToolStripMenuItem( );
+               copyTextMenu.Name = "m_CopyText";
+               copyTextMenu.Size = new Detox.Drawing.Size(152, 22);
+               copyTextMenu.Text = "Copy as Text (for AI)";
+               copyTextMenu.Click += new System.EventHandler(m_MenuCopyText_Click);
+               m_ContextMenuStrip.Items.Add( copyTextMenu );
+            }
+
+            if ( canPasteText )
+            {
+               ToolStripMenuItem pasteTextMenu = new ToolStripMenuItem( );
+               pasteTextMenu.Name = "m_PasteText";
+               pasteTextMenu.Size = new Detox.Drawing.Size(152, 22);
+               pasteTextMenu.Text = "Paste Text Nodes";
+               pasteTextMenu.Click += new System.EventHandler(m_MenuPasteText_Click);
+               m_ContextMenuStrip.Items.Add( pasteTextMenu );
             }
          }
 

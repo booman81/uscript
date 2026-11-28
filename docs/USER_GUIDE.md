@@ -230,6 +230,29 @@ Console) and nothing changes. To go ahead, put those scripts in an Assembly Defi
 
 ---
 
+## Nodes as text (for AI)
+
+Right-click the canvas:
+
+- **Copy as Text (for AI)** copies the selected nodes and their links as readable text. Paste it into a chat with an AI assistant.
+- **Paste Text Nodes** turns that kind of text (from you or from an AI) back into real nodes and links at the mouse. It is one Undo step. Problems, such as an unknown node type, are listed in the Console; everything else is still pasted.
+
+The text starts with `[USCRIPT-TEXT 1]`. Example:
+
+```
+[USCRIPT-TEXT 1]
+node 1 uScriptCon_CompareFloat "Compare Float"
+   B = "0"
+var 2 "Armor" System.Single = "0"
+node 3 uScriptAct_SetFloat "Set Float"
+   Value = "1"
+link 2.Value -> 1.A
+link 1."Equal To" -> 3.In
+```
+
+Kinds: `node` (any action, condition, event or nested graph node, by type name), `var`, `listbox`, `property`, `method`, `event`, `external`, `owner`, `comment`, `link`.
+Positions (`@ x,y`) are optional. Socket names can be the real name (`AfterDelay`) or the name shown on the node, in quotes (`"After Delay"`).
+
 ## Go to Node #
 
 **View → Go to Node #...** (or press **N** on the canvas) jumps to a node by its number and selects it.
