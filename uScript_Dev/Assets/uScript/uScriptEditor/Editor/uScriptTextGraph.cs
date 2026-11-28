@@ -614,10 +614,23 @@ namespace Detox.ScriptEditor
 
          foreach (var s in sockets) if (s.Key == name) return s.Key;
          foreach (var s in sockets) if (string.Equals((s.Value ?? "").Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase)) return s.Key;
-         string squeezed = name.Replace(" ", "");
-         foreach (var s in sockets) if (string.Equals(s.Key, squeezed, StringComparison.OrdinalIgnoreCase)) return s.Key;
+         // letters and digits only, so "Equal To" finds "(Equal To)   =" and "EqualTo"
+         string wanted = Letters(name);
+         foreach (var s in sockets) if (Letters(s.Key) == wanted) return s.Key;
+         foreach (var s in sockets) if (Letters(s.Value) == wanted) return s.Key;
 
          return name;
+      }
+
+      private static string Letters(string text)
+      {
+         var letters = new StringBuilder();
+         foreach (char c in text ?? "")
+         {
+            if (char.IsLetterOrDigit(c)) letters.Append(char.ToLowerInvariant(c));
+         }
+
+         return letters.ToString();
       }
 
       /// <summary>Nodes without "@ x,y" go in rows: signal nodes on top, variables and boxes below.</summary>
